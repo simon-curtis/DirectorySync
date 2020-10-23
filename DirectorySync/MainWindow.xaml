@@ -1,0 +1,100 @@
+﻿<Window x:Class="DirectorySync.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DirectorySync"
+        mc:Ignorable="d"
+        Title="MainWindow" 
+        Height="553" 
+        Width="1097" 
+        Background="{DynamicResource GreyBackground}" 
+        WindowStyle="None"
+        ResizeMode="CanMinimize" 
+        MouseDown="Window_MouseDown" 
+        BorderBrush="DarkGray" 
+        BorderThickness="1" 
+        WindowStartupLocation="CenterScreen" 
+    >
+
+    <Grid ClipToBounds="True" Background="{DynamicResource GreyBackground}" Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="24"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="25"/>
+        </Grid.RowDefinitions>
+        
+        <Grid Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="15" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="15" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="15" />
+                <ColumnDefinition Width="60" />
+                <ColumnDefinition Width="15" />
+                <ColumnDefinition Width="60" />
+            </Grid.ColumnDefinitions>
+            <TextBox Name="IgnoreFilePath" Grid.Column="0" TextWrapping="Wrap"  BorderBrush="{DynamicResource GreyBorder}" Background="{DynamicResource GreyBackground}" Foreground="{DynamicResource LightText}" Text="C:\Users\simon\Desktop\.ignores"/>
+            <TextBox Name="Folder1Path" Grid.Column="2" TextWrapping="Wrap"  BorderBrush="{DynamicResource GreyBorder}" Background="{DynamicResource GreyBackground}" Foreground="{DynamicResource LightText}" Text="O:\Systems\Projects\WebApps\SarmsWeb\Master"/>
+            <TextBox Name="Folder2Path" Grid.Column="4" TextWrapping="Wrap"  BorderBrush="{DynamicResource GreyBorder}" Background="{DynamicResource GreyBackground}" Foreground="{DynamicResource LightText}" Text="C:\Web\master47"/>
+            <Button Name="RunCompare" Grid.Column="6"
+                    Style="{DynamicResource MainButtonStyle}"
+                    Height="20" 
+                    Width="60" 
+                    TextBlock.TextAlignment="Center" 
+                    FontSize="13"
+                    Click="RunCompare_Click"
+            >
+               Run
+            </Button>
+            <Button x:Name="CloseButton" Grid.Column="8"
+                    Style="{DynamicResource MainButtonStyle}"
+                    Height="20" 
+                    Width="60" 
+                    TextBlock.TextAlignment="Center" 
+                    FontSize="13"
+                    Click="CloseButton_Click"
+            >
+               Close
+            </Button>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <DataGrid Style="{DynamicResource DarkGrid}" x:Name="Results" 
+                      Grid.Row="1" 
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch" 
+                      Background="{DynamicResource GreyBackground}" 
+                      AutoGenerateColumns="False" 
+                      RowBackground="{DynamicResource GreyBackground}"
+                      Foreground="{DynamicResource LightText}"
+                >
+
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Copy To Target" Click="CopyFile" />
+                        <MenuItem Header="Ignore File" Click="IgnoreFile" />
+                        <MenuItem Header="Ignore Folder" Click="IgnoreFolder" />
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Original Name" Width="4*" Binding="{Binding LeftName}"/>
+                    <DataGridTextColumn Header="Original Size" Width="1*" Binding="{Binding LeftSize}"/>
+                    <DataGridTextColumn Header="Original Date" Width="1*" Binding="{Binding LeftDate}"/>
+                    <DataGridTextColumn Header="Target Date" Width="1*" Binding="{Binding RightDate}"/>
+                    <DataGridTextColumn Header="Target Size" Width="1*" Binding="{Binding RightSize}"/>
+                    <DataGridTextColumn Header="Status" Width="1*" Binding="{Binding Status}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal">
+            <Label Foreground="{DynamicResource LightText}">Results:</Label>
+            <Label x:Name="Total" Foreground="{DynamicResource LightText}"></Label>
+        </StackPanel>
+
+    </Grid>
+</Window>
