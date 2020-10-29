@@ -17,13 +17,6 @@ using System.Windows.Threading;
 
 namespace DirectorySync
 {
-    class PreviousRunSettings
-    {
-        public string Folder1Path { get; set; }
-        public string Folder2Path { get; set; }
-        public string IgnorePath { get; set; }
-    }
-
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -367,7 +360,5 @@ namespace DirectorySync
                 Folder2Path.Text = result;
             }
         }
-
-
     }
 }
