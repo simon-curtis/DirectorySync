@@ -35,30 +35,31 @@ namespace SarmsMoveTo47
                 }
             }
 
-            _directoryFilters = new Regex(string.Join('|', directoryFilters));
-            _fileFilters = new Regex(string.Join('|', fileFilters));
+            _directoryFilters = new Regex(string.Join('|', directoryFilters), RegexOptions.IgnoreCase);
+            _fileFilters = new Regex(string.Join('|', fileFilters), RegexOptions.IgnoreCase);
         }
 
-        public IEnumerable<FileInfo> GetFiles(DirectoryInfo directoryInfo)
+        public async IAsyncEnumerable<FileInfo> GetFiles(DirectoryInfo directoryInfo)
         {
             string relativeFolderPath = directoryInfo.FullName.Replace(_originalFolderPath, "");
-            if (_directoryFilters.IsMatch(relativeFolderPath)) return new List<FileInfo>();
-
-            var files = new List<FileInfo>();
-
-            foreach (var subDir in directoryInfo.GetDirectories())
+            
+            if (!_directoryFilters.IsMatch(relativeFolderPath))
             {
-                files.AddRange(GetFiles(subDir));
-            }
+                foreach (var subDir in directoryInfo.GetDirectories())
+                {
+                    await foreach (var file in GetFiles(subDir))
+                    {
+                        yield return file;
+                    }
+                }
 
-            foreach (var file in directoryInfo.GetFiles())
-            {
-                string relativeFilePath = file.FullName.Replace(_originalFolderPath, "");
-                if (_fileFilters.IsMatch(relativeFilePath)) continue;
-                files.Add(file);
+                foreach (var file in directoryInfo.GetFiles())
+                {
+                    string relativeFilePath = file.FullName.Replace(_originalFolderPath, "");
+                    if (_fileFilters.IsMatch(relativeFilePath)) continue;
+                    yield return file;
+                }
             }
-
-            return files;
         }
     }
 }

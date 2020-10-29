@@ -10,4 +10,10 @@
     <PackageReference Include="System.Memory" Version="4.5.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms">
+      <HintPath>..\..\..\..\..\..\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Windows.Forms.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

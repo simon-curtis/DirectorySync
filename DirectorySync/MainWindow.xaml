@@ -5,96 +5,204 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DirectorySync"
         mc:Ignorable="d"
-        Title="MainWindow" 
-        Height="553" 
-        Width="1097" 
-        Background="{DynamicResource GreyBackground}" 
-        WindowStyle="None"
-        ResizeMode="CanMinimize" 
+        Title="Directory Sync Tool"
+        ResizeMode="CanResize" 
         MouseDown="Window_MouseDown" 
-        BorderBrush="DarkGray" 
-        BorderThickness="1" 
         WindowStartupLocation="CenterScreen" 
+        Height="482" Width="1032"
     >
-
-    <Grid ClipToBounds="True" Background="{DynamicResource GreyBackground}" Margin="8">
+    <Window.Resources>
+        <Style x:Key="FocusVisual">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Margin="2" StrokeDashArray="1 2" SnapsToDevicePixels="true" StrokeThickness="1" Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="OptionMarkFocusVisual">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Margin="14,0,0,0" StrokeDashArray="1 2" SnapsToDevicePixels="true" StrokeThickness="1" Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <SolidColorBrush x:Key="OptionMark.Static.Background" Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="OptionMark.Static.Border" Color="#FF707070"/>
+        <SolidColorBrush x:Key="OptionMark.Static.Glyph" Color="#FF212121"/>
+        <SolidColorBrush x:Key="OptionMark.MouseOver.Background" Color="#FFF3F9FF"/>
+        <SolidColorBrush x:Key="OptionMark.MouseOver.Border" Color="#FF5593FF"/>
+        <SolidColorBrush x:Key="OptionMark.MouseOver.Glyph" Color="#FF212121"/>
+        <SolidColorBrush x:Key="OptionMark.Pressed.Background" Color="#FFD9ECFF"/>
+        <SolidColorBrush x:Key="OptionMark.Pressed.Border" Color="#FF3C77DD"/>
+        <SolidColorBrush x:Key="OptionMark.Pressed.Glyph" Color="#FF212121"/>
+        <SolidColorBrush x:Key="OptionMark.Disabled.Background" Color="#FFE6E6E6"/>
+        <SolidColorBrush x:Key="OptionMark.Disabled.Border" Color="#FFBCBCBC"/>
+        <SolidColorBrush x:Key="OptionMark.Disabled.Glyph" Color="#FF707070"/>
+        <Style x:Key="CheckBoxStyle1" TargetType="{x:Type CheckBox}">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
+            <Setter Property="Background" Value="{StaticResource OptionMark.Static.Background}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource OptionMark.Static.Border}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type CheckBox}">
+                        <Grid x:Name="templateRoot" Background="Transparent" SnapsToDevicePixels="True">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="checkBoxBorder" CornerRadius="2" Background="{TemplateBinding Background}" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="1" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                                <Grid x:Name="markGrid">
+                                    <Path x:Name="optionMark" Data="F1 M 9.97498,1.22334L 4.6983,9.09834L 4.52164,9.09834L 0,5.19331L 1.27664,3.52165L 4.255,6.08833L 8.33331,1.52588e-005L 9.97498,1.22334 Z " Fill="{StaticResource OptionMark.Static.Glyph}" Margin="1" Opacity="0" Stretch="None"/>
+                                    <Rectangle x:Name="indeterminateMark" Fill="{StaticResource OptionMark.Static.Glyph}" Margin="2" Opacity="0"/>
+                                </Grid>
+                            </Border>
+                            <ContentPresenter x:Name="contentPresenter" Grid.Column="1" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasContent" Value="true">
+                                <Setter Property="FocusVisualStyle" Value="{StaticResource OptionMarkFocusVisual}"/>
+                                <Setter Property="Padding" Value="4,-1,0,0"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="Background" TargetName="checkBoxBorder" Value="{StaticResource OptionMark.MouseOver.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="checkBoxBorder" Value="{StaticResource OptionMark.MouseOver.Border}"/>
+                                <Setter Property="Fill" TargetName="optionMark" Value="{StaticResource OptionMark.MouseOver.Glyph}"/>
+                                <Setter Property="Fill" TargetName="indeterminateMark" Value="{StaticResource OptionMark.MouseOver.Glyph}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Background" TargetName="checkBoxBorder" Value="{StaticResource OptionMark.Disabled.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="checkBoxBorder" Value="{StaticResource OptionMark.Disabled.Border}"/>
+                                <Setter Property="Fill" TargetName="optionMark" Value="{StaticResource OptionMark.Disabled.Glyph}"/>
+                                <Setter Property="Fill" TargetName="indeterminateMark" Value="{StaticResource OptionMark.Disabled.Glyph}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="true">
+                                <Setter Property="Background" TargetName="checkBoxBorder" Value="{StaticResource OptionMark.Pressed.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="checkBoxBorder" Value="{StaticResource OptionMark.Pressed.Border}"/>
+                                <Setter Property="Fill" TargetName="optionMark" Value="{StaticResource OptionMark.Pressed.Glyph}"/>
+                                <Setter Property="Fill" TargetName="indeterminateMark" Value="{StaticResource OptionMark.Pressed.Glyph}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="true">
+                                <Setter Property="Opacity" TargetName="optionMark" Value="1"/>
+                                <Setter Property="Opacity" TargetName="indeterminateMark" Value="0"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="{x:Null}">
+                                <Setter Property="Opacity" TargetName="optionMark" Value="0"/>
+                                <Setter Property="Opacity" TargetName="indeterminateMark" Value="1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="24"/>
-            <RowDefinition Height="10"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="25"/>
+            <RowDefinition Height="5"/>
         </Grid.RowDefinitions>
-        
-        <Grid Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="15" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="15" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="15" />
-                <ColumnDefinition Width="60" />
-                <ColumnDefinition Width="15" />
-                <ColumnDefinition Width="60" />
-            </Grid.ColumnDefinitions>
-            <TextBox Name="IgnoreFilePath" Grid.Column="0" TextWrapping="Wrap"  BorderBrush="{DynamicResource GreyBorder}" Background="{DynamicResource GreyBackground}" Foreground="{DynamicResource LightText}" Text="C:\Users\simon\Desktop\.ignores"/>
-            <TextBox Name="Folder1Path" Grid.Column="2" TextWrapping="Wrap"  BorderBrush="{DynamicResource GreyBorder}" Background="{DynamicResource GreyBackground}" Foreground="{DynamicResource LightText}" Text="O:\Systems\Projects\WebApps\SarmsWeb\Master"/>
-            <TextBox Name="Folder2Path" Grid.Column="4" TextWrapping="Wrap"  BorderBrush="{DynamicResource GreyBorder}" Background="{DynamicResource GreyBackground}" Foreground="{DynamicResource LightText}" Text="C:\Web\master47"/>
-            <Button Name="RunCompare" Grid.Column="6"
-                    Style="{DynamicResource MainButtonStyle}"
-                    Height="20" 
-                    Width="60" 
+
+        <Grid ClipToBounds="True" Margin="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="22"/>
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="15" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="15" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="15" />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2">
+                    <DockPanel Grid.Column="2" Margin="5 0">
+                        <TextBlock Foreground="Gray" Margin="0 0 5 0" VerticalAlignment="Center">ORIGINAL:</TextBlock>
+                        <TextBlock Name="Folder1Path" HorizontalAlignment="Stretch" VerticalAlignment="Center" MouseDown="Folder1Path_MouseDown"></TextBlock>
+                    </DockPanel>
+                </Border>
+
+                <Border Grid.Column="2" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2">
+                    <DockPanel Grid.Column="2" Margin="5 0">
+                        <TextBlock HorizontalAlignment="Left" Foreground="Gray" Margin="0 0 5 0" VerticalAlignment="Center">TARGET:</TextBlock>
+                        <TextBlock Name="Folder2Path" HorizontalAlignment="Stretch" VerticalAlignment="Center" MouseDown="Folder2Path_MouseDown"></TextBlock>
+                    </DockPanel>
+                </Border>
+
+                <Border Grid.Column="4" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2">
+                    <DockPanel Grid.Column="0" Margin="5 0">
+                        <TextBlock Foreground="Gray"
+                                   VerticalAlignment="Center" 
+                                   MouseDown="IgnoreFilePath_MouseDown">
+                            LOAD IGNORE
+                        </TextBlock>
+                    </DockPanel>
+                </Border>
+                
+                <Button Name="RunCompare" Grid.Column="6"
                     TextBlock.TextAlignment="Center" 
                     FontSize="13"
                     Click="RunCompare_Click"
-            >
-               Run
-            </Button>
-            <Button x:Name="CloseButton" Grid.Column="8"
-                    Style="{DynamicResource MainButtonStyle}"
-                    Height="20" 
-                    Width="60" 
-                    TextBlock.TextAlignment="Center" 
-                    FontSize="13"
-                    Click="CloseButton_Click"
-            >
-               Close
-            </Button>
-        </Grid>
+                    Background="White"
+                       BorderBrush="White"
 
-        <Grid Grid.Row="2">
-            <DataGrid Style="{DynamicResource DarkGrid}" x:Name="Results" 
-                      Grid.Row="1" 
+                    >
+                    <Image Source="/Resources/play.png" Width="16" Height="16" />
+                </Button>
+            </Grid>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal">
+                <CheckBox Style="{DynamicResource CheckBoxStyle1}" Name="ShowMissing" Margin="0 0 15 0" IsChecked="True" Content="Missing" Checked="ShowFilterChanged" Unchecked="ShowFilterChanged"></CheckBox>
+                <CheckBox Style="{DynamicResource CheckBoxStyle1}" Name="ShowOriginalNewer" Margin="0 0 15 0" IsChecked="True" Content="Original Newer" Checked="ShowFilterChanged" Unchecked="ShowFilterChanged"></CheckBox>
+                <CheckBox Style="{DynamicResource CheckBoxStyle1}" Name="ShowTargetNewer" Margin="0 0 15 0" IsChecked="True" Content="Target Newer" Checked="ShowFilterChanged" Unchecked="ShowFilterChanged"></CheckBox>
+            </StackPanel>
+
+            <Grid Grid.Row="4">
+                <DataGrid x:Name="Results"  
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch" 
-                      Background="{DynamicResource GreyBackground}" 
-                      AutoGenerateColumns="False" 
-                      RowBackground="{DynamicResource GreyBackground}"
-                      Foreground="{DynamicResource LightText}"
+                      AutoGenerateColumns="False" SelectionMode="Extended" IsReadOnly="True" 
                 >
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Copy Right" Click="CopyFile" />
+                            <MenuItem Header="Ignore File (Name)" Click="IgnoreFileName" />
+                            <MenuItem Header="Ignore File (Exact Path)" Click="IgnoreFileFullPath" />
+                            <MenuItem Header="Ignore Folder" Click="IgnoreFolder" />
+                            <MenuItem Header="Compare Files" Click="CompareFiles" />
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Original Name" Width="4*" Binding="{Binding LeftName}"/>
+                        <DataGridTextColumn Header="Original Size" Width="1*" Binding="{Binding LeftSize}"/>
+                        <DataGridTextColumn Header="Original Date" Width="1*" Binding="{Binding LeftDate}"/>
+                        <DataGridTextColumn Header="Target Date" Width="1*" Binding="{Binding RightDate}"/>
+                        <DataGridTextColumn Header="Target Size" Width="1*" Binding="{Binding RightSize}"/>
+                        <DataGridTextColumn Header="Status" Width="1*" Binding="{Binding Status}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
 
-                <DataGrid.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="Copy To Target" Click="CopyFile" />
-                        <MenuItem Header="Ignore File" Click="IgnoreFile" />
-                        <MenuItem Header="Ignore Folder" Click="IgnoreFolder" />
-                    </ContextMenu>
-                </DataGrid.ContextMenu>
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Original Name" Width="4*" Binding="{Binding LeftName}"/>
-                    <DataGridTextColumn Header="Original Size" Width="1*" Binding="{Binding LeftSize}"/>
-                    <DataGridTextColumn Header="Original Date" Width="1*" Binding="{Binding LeftDate}"/>
-                    <DataGridTextColumn Header="Target Date" Width="1*" Binding="{Binding RightDate}"/>
-                    <DataGridTextColumn Header="Target Size" Width="1*" Binding="{Binding RightSize}"/>
-                    <DataGridTextColumn Header="Status" Width="1*" Binding="{Binding Status}"/>
-                </DataGrid.Columns>
-            </DataGrid>
+            <StackPanel Grid.Row="5" Orientation="Horizontal">
+                <Label>Results:</Label>
+                <Label x:Name="Total" >Will be shown in here g</Label>
+            </StackPanel>
+
         </Grid>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal">
-            <Label Foreground="{DynamicResource LightText}">Results:</Label>
-            <Label x:Name="Total" Foreground="{DynamicResource LightText}"></Label>
-        </StackPanel>
-
+        <ProgressBar Grid.Row="1" BorderThickness="0" Background="white" Name="LoadProgress"></ProgressBar>
     </Grid>
 </Window>

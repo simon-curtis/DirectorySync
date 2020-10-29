@@ -10,6 +10,7 @@ namespace FileCompare
         TargetMissing,
         OriginalIsNewer,
         FilesAreDifferent,
-        FilesAreTheSame
+        FilesAreTheSame,
+        TargetIsNewer
     }
 }
