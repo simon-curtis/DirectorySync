@@ -142,13 +142,11 @@
                     </DockPanel>
                 </Border>
 
-                <Border Grid.Column="4" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2">
+                <Border Grid.Column="4" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2" >
                     <DockPanel Grid.Column="0" Margin="5 0">
                         <TextBlock Foreground="Gray"
                                    VerticalAlignment="Center" 
-                                   MouseDown="IgnoreFilePath_MouseDown">
-                            LOAD IGNORE
-                        </TextBlock>
+                                   MouseDown="IgnoreFilePath_MouseDown" Text="LOAD IGNORE"/>
                     </DockPanel>
                 </Border>
                 
@@ -198,7 +196,7 @@
 
             <StackPanel Grid.Row="5" Orientation="Horizontal">
                 <Label>Results:</Label>
-                <Label x:Name="Total" >Will be shown in here g</Label>
+                <Label x:Name="Total" >Will be shown in here</Label>
             </StackPanel>
 
         </Grid>

@@ -111,9 +111,9 @@ namespace DirectorySync
 
                 if (result.Status == MatchStatus.TargetIsNewer)
                     newerTargets++;
-            }
+            } 
 
-            Total.Content = $"{ComparisonResults.Count} records. Targets Missing: {targetsMissing}. Newer Originals: {newerOriginals}. Newer Targets: {newerTargets}";
+            Total.Content = $"{ComparisonResults.Count} records.  Targets Missing: {targetsMissing}. Newer Originals: {newerOriginals}. Newer Targets: {newerTargets}";
         }
 
         private async void RunCompare_Click(object sender, RoutedEventArgs e)
@@ -188,28 +188,28 @@ namespace DirectorySync
 
             if (fs1.Length != fs2.Length)
             {
-                comparison.Status = MatchStatus.FilesAreDifferent;
-                return comparison;
-            }
-
-            int file1byte = 0;
-            int file2byte = 0;
-            while ((file1byte == file2byte) && file1byte != -1)
-            {
-                file1byte = fs1.ReadByte();
-                file2byte = fs2.ReadByte();
-                if (file1byte != file2byte)
+                if ((originalFileInfo.LastWriteTimeUtc - targetFileInfo.LastWriteTimeUtc).TotalMinutes > 1)
                 {
-                    if ((originalFileInfo.LastWriteTimeUtc - targetFileInfo.LastWriteTimeUtc).TotalMinutes > 1)
-                    {
-                        comparison.Status = MatchStatus.OriginalIsNewer;
-                        return comparison;
-                    }
+                    comparison.Status = MatchStatus.OriginalIsNewer;
+                }
 
-                    if ((originalFileInfo.LastWriteTimeUtc - targetFileInfo.LastWriteTimeUtc).TotalMinutes < 1)
+                if ((originalFileInfo.LastWriteTimeUtc - targetFileInfo.LastWriteTimeUtc).TotalMinutes < 1)
+                {
+                    comparison.Status = MatchStatus.TargetIsNewer;
+                }
+
+                if (comparison.Status == MatchStatus.OriginalIsNewer || comparison.Status == MatchStatus.TargetIsNewer)
+                {
+                    int file1byte = 0;
+                    int file2byte = 0;
+                    while ((file1byte == file2byte) && file1byte != -1)
                     {
-                        comparison.Status = MatchStatus.TargetIsNewer;
-                        return comparison;
+                        file1byte = fs1.ReadByte();
+                        file2byte = fs2.ReadByte();
+                        if (file1byte != file2byte)
+                        {
+                            return comparison;
+                        }
                     }
                 }
             }
