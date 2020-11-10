@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace SarmsMoveTo47
 {
@@ -39,26 +42,54 @@ namespace SarmsMoveTo47
             _fileFilters = new Regex(string.Join('|', fileFilters), RegexOptions.IgnoreCase);
         }
 
-        public async IAsyncEnumerable<FileInfo> GetFiles(DirectoryInfo directoryInfo)
+        private Task<List<FileInfo>> GetFiles(DirectoryInfo directory)
         {
-            string relativeFolderPath = directoryInfo.FullName.Replace(_originalFolderPath, "");
-            
-            if (!_directoryFilters.IsMatch(relativeFolderPath))
+            var files = new List<FileInfo>();
+            foreach (var file in directory.GetFiles())
             {
-                foreach (var subDir in directoryInfo.GetDirectories())
-                {
-                    await foreach (var file in GetFiles(subDir))
-                    {
-                        yield return file;
-                    }
-                }
+                string relativeFilePath = file.FullName.Replace(_originalFolderPath, "");
+                if (_fileFilters.IsMatch(relativeFilePath)) continue;
+                    files.Add(file);
+            }
+            return Task.FromResult(files);
+        } 
 
-                foreach (var file in directoryInfo.GetFiles())
-                {
-                    string relativeFilePath = file.FullName.Replace(_originalFolderPath, "");
-                    if (_fileFilters.IsMatch(relativeFilePath)) continue;
-                    yield return file;
-                }
+
+        private bool DirectoryHidden(DirectoryInfo subDir) => _directoryFilters.IsMatch(subDir.FullName.Replace(_originalFolderPath, ""));
+        private bool FileHidden(FileInfo file) => _fileFilters.IsMatch(file.FullName.Replace(_originalFolderPath, ""));
+
+        private async Task<IEnumerable<FileInfo>> SearchSubDirectoryAsync(DirectoryInfo Directory)
+        {
+            var files = new List<FileInfo>();
+            await foreach (var file in SearchDirectoryAsync(Directory))
+                files.Add(file);
+            return files;
+        }
+
+        public async IAsyncEnumerable<FileInfo> SearchDirectoryAsync(DirectoryInfo directoryInfo)
+        {
+            var subDirs = directoryInfo.GetDirectories();
+            var tasks = new List<Task>();
+            var files = new List<FileInfo>();
+
+            foreach (var subDir in subDirs) {
+                if (DirectoryHidden(subDir)) continue;
+                tasks.Add(Task.Run(async () => {
+                    var _files = await SearchSubDirectoryAsync(subDir);
+                    files.AddRange(_files);
+                }));
+            }
+            await Task.WhenAll(tasks);
+
+            foreach (var file in files)
+            {
+                yield return file;
+            }
+
+            foreach (var file in directoryInfo.GetFiles())
+            {
+                if (FileHidden(file)) continue;
+                yield return file;
             }
         }
     }

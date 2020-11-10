@@ -7,7 +7,8 @@ namespace FileCompare
     public enum MatchStatus
     {
         NotProcessed,
-        TargetMissing,
+        MissingAndCreatedBeforeFolder,
+        MissingAndCreatedAfterFolder,
         OriginalIsNewer,
         FilesAreDifferent,
         FilesAreTheSame,

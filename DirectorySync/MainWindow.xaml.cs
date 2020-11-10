@@ -1,4 +1,5 @@
 ﻿using FileCompare;
+using Microsoft.VisualBasic.CompilerServices;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.Win32;
 using SarmsMoveTo47;
@@ -6,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -22,8 +24,45 @@ namespace DirectorySync
     /// </summary>
     public partial class MainWindow : Window
     {
-        private string IgnoreFilePath { get; set; } = "";
-        private string LastRunPath => SpecialDirectories.Temp + '\\' + "DirectorySync.lastrun";
+        private string ingoresFilePath = "";
+
+        private DirectoryInfo path1;
+        private DirectoryInfo path2;
+        
+        private DateTime Folder1CreationDate;
+        private DateTime Folder2CreationDate;
+
+        private string IgnoreFilePath { 
+            get => ingoresFilePath; 
+            set { ingoresFilePath = value; IgnoreFilePathButton.Text = value.Split("\\")[^1].Replace(".ignores", ""); } 
+        }
+
+        private DirectoryInfo Folder1Path
+        {
+            get => path1;
+            set
+            {
+                path1 = value;
+                Folder1PathTextBox.Text = value.FullName;
+                Folder1CreationDate = value.CreationTime;
+            }
+        }
+
+        private DirectoryInfo Folder2Path
+        {
+            get => path2;
+            set
+            {
+                path2 = value;
+                Folder2PathTextBox.Text = value.FullName;
+                Folder2CreationDate = value.CreationTime;
+            }
+        }
+
+
+        private string AppDataString => $@"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\DirectorySync";
+        private string LastRunPath => $@"{AppDataString}\.lastrun";
+        private string IgnoresFolder => $@"{AppDataString}\ignores\";
 
         protected ObservableCollection<ComparisonResult> ComparisonResults = new ObservableCollection<ComparisonResult>();
 
@@ -34,45 +73,43 @@ namespace DirectorySync
             ComparisonResults.CollectionChanged += ComparisonResults_CollectionChanged;
             Results.ItemsSource = ComparisonResults;
 
-            if (!File.Exists(LastRunPath))
-            {
-                FirstTimeSetup();
-            }
-            else
-            {
-                LoadSettings();
-            }
+            if (File.Exists(LastRunPath)) LoadSettings(); else FirstTimeSetup();
+        }
 
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            SaveSettings();
+            base.OnClosing(e);
         }
 
         private void LoadSettings()
         {
             var settingsFileText = File.ReadAllText(LastRunPath);
             var settings = JsonSerializer.Deserialize<PreviousRunSettings>(settingsFileText);
-            Folder1Path.Text = settings.Folder1Path;
-            Folder2Path.Text = settings.Folder2Path;
+            Folder1Path = new DirectoryInfo(settings.Folder1Path);
+            Folder2Path = new DirectoryInfo(settings.Folder2Path);
             IgnoreFilePath = settings.IgnorePath;
         }
 
         private void FirstTimeSetup()
         {
+            if (!Directory.Exists(IgnoresFolder)) {
+                Directory.CreateDirectory(IgnoresFolder);
+            }
+
+            var defaultIgnoresPath = IgnoresFolder + "default.ignores";
+            if (!File.Exists(defaultIgnoresPath))
+            {
+                File.WriteAllText(defaultIgnoresPath, "");
+                IgnoreFilePath = defaultIgnoresPath;
+            }
+
             Folder1Path_MouseDown(null, null);
-            if (Folder1Path.Text == "")
+            if (Folder1Path.FullName == "")
                 Application.Current.Shutdown();
 
-            if (File.Exists(Folder1Path.Text + "\\" + ".ignores"))
-            {
-                IgnoreFilePath = Folder1Path.Text + "\\" + ".ignores";
-            }
-            else
-            {
-                IgnoreFilePath_MouseDown(null, null);
-                if (IgnoreFilePath == "")
-                    Application.Current.Shutdown();
-            }
-
             Folder2Path_MouseDown(null, null);
-            if (Folder2Path.Text == "")
+            if (Folder2Path.FullName == "")
                 Application.Current.Shutdown();
 
             SaveSettings();
@@ -82,8 +119,8 @@ namespace DirectorySync
         {
             var settingsAsJson = JsonSerializer.Serialize(new PreviousRunSettings
             {
-                Folder1Path = Folder1Path.Text,
-                Folder2Path = Folder2Path.Text,
+                Folder1Path = Folder1Path.FullName,
+                Folder2Path = Folder2Path.FullName,
                 IgnorePath = IgnoreFilePath
             });
 
@@ -103,7 +140,9 @@ namespace DirectorySync
 
             foreach (var result in ComparisonResults)
             {
-                if (result.Status == MatchStatus.TargetMissing)
+                if (result.Status == MatchStatus.MissingAndCreatedAfterFolder
+                 || result.Status == MatchStatus.MissingAndCreatedBeforeFolder
+                )
                     targetsMissing++;
 
                 if (result.Status == MatchStatus.OriginalIsNewer)
@@ -118,6 +157,9 @@ namespace DirectorySync
 
         private async void RunCompare_Click(object sender, RoutedEventArgs e)
         {
+            if (string.IsNullOrEmpty(Folder1Path.FullName) || string.IsNullOrEmpty(Folder2Path.FullName))
+                return;
+
             await GetFiles();
         }
 
@@ -128,19 +170,19 @@ namespace DirectorySync
             LoadProgress.Value = 0;
 
             var ignoreFilePath = this.IgnoreFilePath;
-            var folder1Path = Folder1Path.Text;
-            var folder2Path = Folder2Path.Text;
+            var folder1Path = Folder1Path.FullName;
+            var folder2Path = Folder2Path.FullName;
 
             var searchService = new FileFinderService(ignoreFilePath, folder1Path);
             var originalFolderInfo = new DirectoryInfo(folder1Path);
             if (!originalFolderInfo.Exists) return;
 
             var tasks = new List<Task>();
-            await foreach (var file in searchService.GetFiles(originalFolderInfo))
+            await foreach (var file in searchService.SearchDirectoryAsync(originalFolderInfo))
             {
                 var result = new ComparisonResult
                 {
-                    LeftName = file.FullName.Replace(Folder1Path.Text, ""),
+                    LeftName = file.FullName.Replace(Folder1Path.FullName, ""),
                     LeftDate = file.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm:ss"),
                     LeftSize = file.Length
                 };
@@ -175,7 +217,9 @@ namespace DirectorySync
 
             if (!targetFileInfo.Exists)
             {
-                comparison.Status = MatchStatus.TargetMissing;
+                comparison.Status = originalFileInfo.CreationTime < Folder2CreationDate
+                    ? MatchStatus.MissingAndCreatedBeforeFolder
+                    : MatchStatus.MissingAndCreatedAfterFolder;
                 return comparison;
             }
 
@@ -228,8 +272,8 @@ namespace DirectorySync
 
             foreach (var file in filesToRemove)
             {
-                string originalPath = Folder1Path.Text + "/" + file.LeftName;
-                FileInfo targetPathInfo = new FileInfo(Folder2Path.Text + "/" + file.LeftName);
+                string originalPath = Folder1Path.FullName + "/" + file.LeftName;
+                FileInfo targetPathInfo = new FileInfo(Folder2Path.FullName + "/" + file.LeftName);
                 if (!targetPathInfo.Directory.Exists)
                     targetPathInfo.Directory.Create();
 
@@ -248,7 +292,7 @@ namespace DirectorySync
 
             foreach (var file in filesToRemove)
             {
-                File.AppendAllText(IgnoreFilePath, "f: " + file.LeftName[1..] + "\r");
+                File.AppendAllText(IgnoreFilePath, "f: " + file.LeftName.Split('\\')[^1] + "\r");
                 ComparisonResults.Remove(file);
             }
         }
@@ -263,7 +307,7 @@ namespace DirectorySync
 
             foreach (var file in filesToRemove)
             {
-                File.AppendAllText(IgnoreFilePath, "f: " + file.LeftName.Split('\\')[^1] + "\r");
+                File.AppendAllText(IgnoreFilePath, "f: " + file.LeftName[1..] + "\r");
                 ComparisonResults.Remove(file);
             }
         }
@@ -271,10 +315,10 @@ namespace DirectorySync
         private void IgnoreFolder(object sender, RoutedEventArgs e)
         {
             var result = Results.SelectedItem as ComparisonResult;
-            var fullPathInfo = new FileInfo(Folder1Path.Text + "\\" + result.LeftName);
-            var relativePath = fullPathInfo.Directory.FullName.Replace(Folder1Path.Text, "");
+            var fullPathInfo = new FileInfo(Folder1Path.FullName + "\\" + result.LeftName);
+            var relativePath = fullPathInfo.Directory.FullName.Replace(Folder1Path.FullName, "");
 
-            File.AppendAllText(IgnoreFilePath, "d: " + fullPathInfo.Directory.FullName.Replace(Folder1Path.Text, "")[1..] + "\r");
+            File.AppendAllText(IgnoreFilePath, "d: " + fullPathInfo.Directory.FullName.Replace(Folder1Path.Name, "")[1..] + "\r");
             ComparisonResults.Remove(result);
             foreach (var res in ComparisonResults.Where(result => result.LeftName.StartsWith(relativePath)).ToArray())
             {
@@ -286,8 +330,8 @@ namespace DirectorySync
         {
             var comparison = Results.SelectedItem as ComparisonResult;
 
-            var text1 = File.ReadAllText(Folder1Path.Text + "\\" + comparison.LeftName);
-            var text2 = File.ReadAllText(Folder2Path.Text + "\\" + comparison.RightName);
+            var text1 = File.ReadAllText(Folder1Path.FullName + "\\" + comparison.LeftName);
+            var text2 = File.ReadAllText(Folder2Path.FullName + "\\" + comparison.RightName);
             var textCompare = new TextCompare(text1, text2);
             textCompare.Show();
         }
@@ -297,7 +341,7 @@ namespace DirectorySync
             try
             {
                 var result = Results.SelectedItem as ComparisonResult;
-                Process.Start(Folder1Path.Text + "\\" + result.LeftName);
+                Process.Start(Folder1Path.FullName + "\\" + result.LeftName);
             }
             catch { }
         }
@@ -319,7 +363,8 @@ namespace DirectorySync
         {
             var result = (ComparisonResult)obj;
 
-            if ((ShowMissing.IsChecked ?? false) && result.Status == MatchStatus.TargetMissing)
+            if ((ShowMissing.IsChecked ?? false) && (result.Status == MatchStatus.MissingAndCreatedBeforeFolder
+                                                    || result.Status == MatchStatus.MissingAndCreatedAfterFolder))
                 return true;
 
             if ((ShowOriginalNewer.IsChecked ?? false) && result.Status == MatchStatus.OriginalIsNewer)
@@ -336,11 +381,13 @@ namespace DirectorySync
             var openFileDialog = new OpenFileDialog();
             openFileDialog.Title = "Choose Ignore File";
             openFileDialog.Filter = "Ignore File (*.ignores)|*.ignores";
+            openFileDialog.InitialDirectory = IgnoresFolder;
             var picked = openFileDialog.ShowDialog() ?? false;
             if (picked)
             {
                 IgnoreFilePath = openFileDialog.FileName;
             }
+            SaveSettings();
         }
 
         private void Folder1Path_MouseDown(object sender, MouseButtonEventArgs e)
@@ -348,7 +395,7 @@ namespace DirectorySync
             var result = LegacyFolderPicker.GetFolder("Select original folder");
             if (result != "")
             {
-                Folder1Path.Text = result;
+                Folder1Path = new DirectoryInfo(result); 
             }
         }
 
@@ -357,7 +404,7 @@ namespace DirectorySync
             var result = LegacyFolderPicker.GetFolder("Select comparison folder");
             if (result != "")
             {
-                Folder2Path.Text = result;
+                Folder2Path = new DirectoryInfo(result); 
             }
         }
     }
