@@ -14,6 +14,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -28,13 +29,13 @@ namespace DirectorySync
 
         private DirectoryInfo path1;
         private DirectoryInfo path2;
-        
+
         private DateTime Folder1CreationDate;
         private DateTime Folder2CreationDate;
 
-        private string IgnoreFilePath { 
-            get => ingoresFilePath; 
-            set { ingoresFilePath = value; IgnoreFilePathButton.Text = value.Split("\\")[^1].Replace(".ignores", ""); } 
+        private string IgnoreFilePath {
+            get => ingoresFilePath;
+            set { ingoresFilePath = value; IgnoreFilePathButton.Text = value.Split("\\")[^1].Replace(".ignores", ""); }
         }
 
         private DirectoryInfo Folder1Path
@@ -59,7 +60,7 @@ namespace DirectorySync
             }
         }
 
-
+        
         private string AppDataString => $@"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\DirectorySync";
         private string LastRunPath => $@"{AppDataString}\.lastrun";
         private string IgnoresFolder => $@"{AppDataString}\ignores\";
@@ -150,7 +151,7 @@ namespace DirectorySync
 
                 if (result.Status == MatchStatus.TargetIsNewer)
                     newerTargets++;
-            } 
+            }
 
             Total.Content = $"{ComparisonResults.Count} records.  Targets Missing: {targetsMissing}. Newer Originals: {newerOriginals}. Newer Targets: {newerTargets}";
         }
@@ -189,9 +190,9 @@ namespace DirectorySync
 
                 LoadProgress.Maximum++;
 
-                tasks.Add(Task.Run(async () =>
+                tasks.Add(Task.Run(() =>
                 {
-                    var matchResult = await GetMatchStatus(folder1Path, folder2Path, result);
+                    var matchResult = GetMatchStatus(folder1Path, folder2Path, result);
                     if (matchResult.Status != MatchStatus.FilesAreTheSame)
                     {
                         Dispatcher.Invoke(() =>
@@ -210,7 +211,7 @@ namespace DirectorySync
             LoadProgress.Value = 0;
         }
 
-        private async Task<ComparisonResult> GetMatchStatus(string folder1, string folder2, ComparisonResult comparison)
+        private ComparisonResult GetMatchStatus(string folder1, string folder2, ComparisonResult comparison)
         {
             var originalFileInfo = new FileInfo($"{folder1}\\{comparison.LeftName}");
             var targetFileInfo = new FileInfo($"{folder2}\\{comparison.LeftName}");
@@ -230,39 +231,29 @@ namespace DirectorySync
             using var fs1 = new FileStream(originalFileInfo.FullName, FileMode.Open, FileAccess.Read);
             using var fs2 = new FileStream(targetFileInfo.FullName, FileMode.Open, FileAccess.Read);
 
-            if (fs1.Length != fs2.Length)
+            if ((originalFileInfo.LastWriteTimeUtc - targetFileInfo.LastWriteTimeUtc).TotalMinutes > 1)
             {
-                if ((originalFileInfo.LastWriteTimeUtc - targetFileInfo.LastWriteTimeUtc).TotalMinutes > 1)
-                {
-                    comparison.Status = MatchStatus.OriginalIsNewer;
-                }
+                comparison.Status = MatchStatus.OriginalIsNewer;
+                return comparison;
+            }
 
-                if ((originalFileInfo.LastWriteTimeUtc - targetFileInfo.LastWriteTimeUtc).TotalMinutes < 1)
-                {
-                    comparison.Status = MatchStatus.TargetIsNewer;
-                }
+            if ((originalFileInfo.LastWriteTimeUtc - targetFileInfo.LastWriteTimeUtc).TotalMinutes < 1)
+            {
+                comparison.Status = MatchStatus.TargetIsNewer;
+                return comparison;
+            }
 
-                if (comparison.Status == MatchStatus.OriginalIsNewer || comparison.Status == MatchStatus.TargetIsNewer)
-                {
-                    int file1byte = 0;
-                    int file2byte = 0;
-                    while ((file1byte == file2byte) && file1byte != -1)
-                    {
-                        file1byte = fs1.ReadByte();
-                        file2byte = fs2.ReadByte();
-                        if (file1byte != file2byte)
-                        {
-                            return comparison;
-                        }
-                    }
-                }
+            if (originalFileInfo.Length != targetFileInfo.Length)
+            {
+                comparison.Status = MatchStatus.FilesAreDifferent;
+                return comparison;
             }
 
             comparison.Status = MatchStatus.FilesAreTheSame;
             return comparison;
         }
 
-        private void CopyFile(object sender, RoutedEventArgs e)
+        private async void CopyFile(object sender, RoutedEventArgs e)
         {
             var filesToRemove = new List<ComparisonResult>();
             foreach (var item in Results.SelectedItems)
@@ -270,16 +261,25 @@ namespace DirectorySync
                 filesToRemove.Add(item as ComparisonResult);
             }
 
+            var tasks = new List<Task>();
+
             foreach (var file in filesToRemove)
             {
-                string originalPath = Folder1Path.FullName + "/" + file.LeftName;
-                FileInfo targetPathInfo = new FileInfo(Folder2Path.FullName + "/" + file.LeftName);
-                if (!targetPathInfo.Directory.Exists)
-                    targetPathInfo.Directory.Create();
-
-                File.Copy(originalPath, targetPathInfo.FullName, true);
-                ComparisonResults.Remove(file);
+                tasks.Add(Task.Run(() =>
+                {
+                    string originalPath = Folder1Path.FullName + "/" + file.LeftName;
+                    FileInfo targetPathInfo = new FileInfo(Folder2Path.FullName + "/" + file.LeftName);
+                    if (!targetPathInfo.Directory.Exists)
+                        targetPathInfo.Directory.Create();
+                    File.Copy(originalPath, targetPathInfo.FullName, true);
+                    Dispatcher.Invoke(() =>
+                    {
+                        ComparisonResults.Remove(file);
+                    });
+                }));
             }
+
+            await Task.WhenAll(tasks);
         }
 
         private void IgnoreFileName(object sender, RoutedEventArgs e)
@@ -351,6 +351,8 @@ namespace DirectorySync
             Application.Current.Shutdown();
         }
 
+        private void SearchBox_KeyUp(object sender, KeyEventArgs e) => ShowFilterChanged(null, null);
+
         private void ShowFilterChanged(object sender, RoutedEventArgs e)
         {
             if (Results?.Items != null)
@@ -363,17 +365,17 @@ namespace DirectorySync
         {
             var result = (ComparisonResult)obj;
 
-            if ((ShowMissing.IsChecked ?? false) && (result.Status == MatchStatus.MissingAndCreatedBeforeFolder
-                                                    || result.Status == MatchStatus.MissingAndCreatedAfterFolder))
-                return true;
+            if (SearchBox.Text != "" && !result.LeftName.ToLower().Contains(SearchBox.Text.ToLower()))
+                return false;
 
-            if ((ShowOriginalNewer.IsChecked ?? false) && result.Status == MatchStatus.OriginalIsNewer)
-                return true;
-
-            if ((ShowTargetNewer.IsChecked ?? false) && result.Status == MatchStatus.TargetIsNewer)
-                return true;
-
-            return false;
+            return result.Status switch
+            {
+                MatchStatus.MissingAndCreatedBeforeFolder when (ShowMissing.IsChecked ?? true) => true,
+                MatchStatus.MissingAndCreatedAfterFolder when (ShowMissing.IsChecked ?? true) => true,
+                MatchStatus.OriginalIsNewer when (ShowOriginalNewer.IsChecked ?? true) => true,
+                MatchStatus.TargetIsNewer when (ShowTargetNewer.IsChecked ?? true) => true,
+                _ => false
+            };
         }
 
         private void IgnoreFilePath_MouseDown(object sender, MouseButtonEventArgs e)
@@ -395,7 +397,7 @@ namespace DirectorySync
             var result = LegacyFolderPicker.GetFolder("Select original folder");
             if (result != "")
             {
-                Folder1Path = new DirectoryInfo(result); 
+                Folder1Path = new DirectoryInfo(result);
             }
         }
 
@@ -404,8 +406,10 @@ namespace DirectorySync
             var result = LegacyFolderPicker.GetFolder("Select comparison folder");
             if (result != "")
             {
-                Folder2Path = new DirectoryInfo(result); 
+                Folder2Path = new DirectoryInfo(result);
             }
         }
+
+        
     }
 }

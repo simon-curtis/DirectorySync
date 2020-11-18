@@ -24,7 +24,7 @@ namespace SarmsMoveTo47
             {
                 if (string.IsNullOrEmpty(line)) continue;
 
-                var linePart = Regex.Escape(line[2..].Trim()).Replace(@"\*", ".*");
+                var linePart = line[2..].Trim();
 
                 switch (line[0])
                 {
