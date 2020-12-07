@@ -192,7 +192,7 @@ namespace DirectorySync
             {
                 var result = new ComparisonResult
                 {
-                    LeftName = file.FullName.Replace(Folder1Path.FullName, ""),
+                    LeftName = file.FullName[fileNameSplitIndex..],
                     LeftDate = file.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm:ss"),
                     LeftSize = file.Length
                 };
