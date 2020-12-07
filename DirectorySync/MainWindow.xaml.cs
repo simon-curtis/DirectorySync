@@ -141,16 +141,25 @@ namespace DirectorySync
 
             foreach (var result in ComparisonResults)
             {
-                if (result.Status == MatchStatus.MissingAndCreatedAfterFolder
-                 || result.Status == MatchStatus.MissingAndCreatedBeforeFolder
-                )
-                    targetsMissing++;
+                switch (result.Status)
+                {
+                    case MatchStatus.MissingAndCreatedAfterFolder:
+                    case MatchStatus.MissingAndCreatedBeforeFolder:
+                        targetsMissing++;
+                        break;
+                    case MatchStatus.OriginalIsNewer:
+                        newerOriginals++;
+                        break;
+                    case MatchStatus.TargetIsNewer:
+                        newerTargets++;
+                        break;
 
-                if (result.Status == MatchStatus.OriginalIsNewer)
-                    newerOriginals++;
-
-                if (result.Status == MatchStatus.TargetIsNewer)
-                    newerTargets++;
+                    case MatchStatus.NotProcessed:
+                    case MatchStatus.FilesAreDifferent:
+                    case MatchStatus.FilesAreTheSame:
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
 
             Total.Content = $"{ComparisonResults.Count} records.  Targets Missing: {targetsMissing}. Newer Originals: {newerOriginals}. Newer Targets: {newerTargets}";
