@@ -349,6 +349,7 @@ namespace DirectorySync
 
             return result.Status switch
             {
+                MatchStatus.FilesAreTheSame when (ShowIdentical.IsChecked ?? false) => true,
                 MatchStatus.MissingAndCreatedBeforeFolder when (ShowMissing.IsChecked ?? true) => true,
                 MatchStatus.MissingAndCreatedAfterFolder when (ShowMissing.IsChecked ?? true) => true,
                 MatchStatus.OriginalIsNewer when (ShowOriginalNewer.IsChecked ?? true) => true,
