@@ -410,6 +410,10 @@ namespace DirectorySync
             }
         }
 
-        
+        private void TestPath_OnClick(object sender, RoutedEventArgs e)
+        {
+            var window = new TestPathWindow(IgnoreFilePath);
+            window.ShowDialog();
+        }
     }
 }
