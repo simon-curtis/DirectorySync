@@ -237,6 +237,6 @@
 
         </Grid>
 
-        <ProgressBar Grid.Row="1" BorderThickness="0" Background="white" Name="LoadProgress"></ProgressBar>
+        <ProgressBar Grid.Row="2" BorderThickness="0" Background="white" Name="LoadProgress" />
     </Grid>
 </Window>
