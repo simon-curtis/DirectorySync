@@ -170,14 +170,14 @@ namespace DirectorySync
             LoadProgress.Maximum = 0;
             LoadProgress.Value = 0;
 
-            var ignoreFilePath = this.IgnoreFilePath;
             var folder1Path = Folder1Path.FullName;
             var folder2Path = Folder2Path.FullName;
 
-            var searchService = new FileFinderService(ignoreFilePath, folder1Path);
+            var searchService = new FileFinderService(IgnoreFilePath, folder1Path);
             var originalFolderInfo = new DirectoryInfo(folder1Path);
             if (!originalFolderInfo.Exists) return;
 
+            var fileNameSplitIndex = Folder1Path.FullName.Length;
             var tasks = new List<Task>();
             await foreach (var file in searchService.SearchDirectoryAsync(originalFolderInfo))
             {
@@ -193,21 +193,15 @@ namespace DirectorySync
                 tasks.Add(Task.Run(() =>
                 {
                     var matchResult = GetMatchStatus(folder1Path, folder2Path, result);
-                    if (matchResult.Status != MatchStatus.FilesAreTheSame)
-                    {
-                        Dispatcher.Invoke(() =>
-                        {
-                            ComparisonResults.Add(result);
-                        });
-                    }
-
                     Dispatcher.Invoke(() =>
                     {
+                        ComparisonResults.Add(matchResult);
                         LoadProgress.Value++;
                     });
                 }));
             }
             await Task.WhenAll(tasks);
+            ShowFilterChanged(null,null);
             LoadProgress.Value = 0;
         }
 
