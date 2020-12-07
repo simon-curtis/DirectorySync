@@ -315,13 +315,15 @@ namespace DirectorySync
 
         private void IgnoreFolder(object sender, RoutedEventArgs e)
         {
-            var result = Results.SelectedItem as ComparisonResult;
+            if (!(Results.SelectedItem is ComparisonResult result)) return;
+
             var fullPathInfo = new FileInfo(Folder1Path.FullName + "\\" + result.LeftName);
+            if (fullPathInfo.Directory == null) return;
             var relativePath = fullPathInfo.Directory.FullName.Replace(Folder1Path.FullName, "");
 
             File.AppendAllText(IgnoreFilePath, "d: " + fullPathInfo.Directory.FullName.Replace(Folder1Path.Name, "")[1..] + "\r");
             ComparisonResults.Remove(result);
-            foreach (var res in ComparisonResults.Where(result => result.LeftName.StartsWith(relativePath)).ToArray())
+            foreach (var res in ComparisonResults.Where(r => r.LeftName.StartsWith(relativePath)).ToArray())
             {
                 ComparisonResults.Remove(res);
             }
@@ -329,7 +331,7 @@ namespace DirectorySync
 
         private void CompareFiles(object sender, RoutedEventArgs e)
         {
-            var comparison = Results.SelectedItem as ComparisonResult;
+            if (!(Results.SelectedItem is ComparisonResult comparison)) return;
 
             var text1 = File.ReadAllText(Folder1Path.FullName + "\\" + comparison.LeftName);
             var text2 = File.ReadAllText(Folder2Path.FullName + "\\" + comparison.RightName);
@@ -344,12 +346,10 @@ namespace DirectorySync
                 var result = Results.SelectedItem as ComparisonResult;
                 Process.Start(Folder1Path.FullName + "\\" + result.LeftName);
             }
-            catch { }
-        }
-
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
+            catch
+            {
+                // ignored
+            }
         }
 
         private void SearchBox_KeyUp(object sender, KeyEventArgs e) => ShowFilterChanged(null, null);
@@ -381,12 +381,13 @@ namespace DirectorySync
 
         private void IgnoreFilePath_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            var openFileDialog = new OpenFileDialog();
-            openFileDialog.Title = "Choose Ignore File";
-            openFileDialog.Filter = "Ignore File (*.ignores)|*.ignores";
-            openFileDialog.InitialDirectory = IgnoresFolder;
-            var picked = openFileDialog.ShowDialog() ?? false;
-            if (picked)
+            var openFileDialog = new OpenFileDialog
+            {
+                Title = "Choose Ignore File",
+                Filter = "Ignore File (*.ignores)|*.ignores",
+                InitialDirectory = IgnoresFolder
+            };
+            if (openFileDialog.ShowDialog() ?? false)
             {
                 IgnoreFilePath = openFileDialog.FileName;
             }
