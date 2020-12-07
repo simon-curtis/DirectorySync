@@ -40,22 +40,17 @@ namespace FileCompare
             _fileFilters = new Regex(string.Join('|', fileFilters), RegexOptions.IgnoreCase);
         }
 
-        private bool DirectoryHidden(DirectoryInfo subDir) => _directoryFilters.IsMatch(subDir.FullName.Replace(_originalFolderPath, ""));
-        private bool FileHidden(string fileName) => _fileFilters.IsMatch(fileName);
+        private bool IncludeDirectory(DirectoryInfo subDir) => !_directoryFilters.IsMatch(subDir.FullName.Replace(_originalFolderPath, ""));
+        private bool IncludeFile(FileInfo file) => !_fileFilters.IsMatch(file.Name);
 
         public async IAsyncEnumerable<FileInfo> SearchDirectoryAsync(DirectoryInfo directoryInfo)
         {
-            foreach (var file in directoryInfo.GetFiles())
-            {
-                if (FileHidden(file.Name)) continue;
+            foreach (var file in directoryInfo.GetFiles().Where(IncludeFile))
                 yield return file;
-            }
-            foreach (var subDir in directoryInfo.GetDirectories())
-            {
-                if (DirectoryHidden(subDir)) continue;
-                await foreach (var file in SearchDirectoryAsync(subDir))
+            
+            foreach (var dir in directoryInfo.GetDirectories().Where(IncludeDirectory))
+                await foreach (var file in SearchDirectoryAsync(dir))
                     yield return file;
-            }
         }
 
         public static IEnumerable<string> TestFile(string filterPath, string relativeFilePath)
