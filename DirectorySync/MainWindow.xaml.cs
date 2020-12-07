@@ -181,22 +181,15 @@ namespace DirectorySync
             var originalFolderInfo = new DirectoryInfo(folder1Path);
             if (!originalFolderInfo.Exists) return;
 
-            var fileNameSplitIndex = Folder1Path.FullName.Length;
             var tasks = new List<Task>();
             await foreach (var file in searchService.SearchDirectoryAsync(originalFolderInfo))
             {
-                var result = new ComparisonResult
-                {
-                    LeftName = file.FullName[fileNameSplitIndex..],
-                    LeftDate = file.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm:ss"),
-                    LeftSize = file.Length
-                };
-
                 LoadProgress.Maximum++;
 
                 tasks.Add(Task.Run(() =>
                 {
-                    var matchResult = GetMatchStatus(folder1Path, folder2Path, result);
+                    var matchResult = GetMatchStatus(folder1Path, folder2Path, file);
+
                     Dispatcher.Invoke(() =>
                     {
                         ComparisonResults.Add(matchResult);
@@ -209,14 +202,22 @@ namespace DirectorySync
             LoadProgress.Value = 0;
         }
 
-        private ComparisonResult GetMatchStatus(string folder1, string folder2, ComparisonResult comparison)
+        private ComparisonResult GetMatchStatus(string folder1, string folder2, FileInfo fileInfo)
         {
-            var originalFileInfo = new FileInfo($"{folder1}\\{comparison.LeftName}");
+            var fileNameSplitIndex = Folder1Path.FullName.Length;
+
+            var comparison = new ComparisonResult
+            {
+                LeftName = fileInfo.FullName[fileNameSplitIndex..],
+                LeftDate = fileInfo.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm:ss"),
+                LeftSize = fileInfo.Length
+            };
+            
             var targetFileInfo = new FileInfo($"{folder2}\\{comparison.LeftName}");
 
             if (!targetFileInfo.Exists)
             {
-                comparison.Status = originalFileInfo.CreationTime < Folder2CreationDate
+                comparison.Status = fileInfo.CreationTime < Folder2CreationDate
                     ? MatchStatus.MissingAndCreatedBeforeFolder
                     : MatchStatus.MissingAndCreatedAfterFolder;
                 return comparison;
@@ -226,20 +227,19 @@ namespace DirectorySync
             comparison.RightDate = targetFileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss");
             comparison.RightSize = targetFileInfo.Length;
 
-
-            if (originalFileInfo.LastWriteTime.TimeOfDay > targetFileInfo.LastWriteTime.TimeOfDay)
+            if (fileInfo.LastWriteTime.TimeOfDay > targetFileInfo.LastWriteTime.TimeOfDay)
             {
                 comparison.Status = MatchStatus.OriginalIsNewer;
                 return comparison;
             }
 
-            if (originalFileInfo.LastWriteTime.TimeOfDay < targetFileInfo.LastWriteTime.TimeOfDay)
+            if (fileInfo.LastWriteTime.TimeOfDay < targetFileInfo.LastWriteTime.TimeOfDay)
             {
                 comparison.Status = MatchStatus.TargetIsNewer;
                 return comparison;
             }
 
-            if (originalFileInfo.Length != targetFileInfo.Length)
+            if (fileInfo.Length != targetFileInfo.Length)
             {
                 comparison.Status = MatchStatus.FilesAreDifferent;
                 return comparison;
