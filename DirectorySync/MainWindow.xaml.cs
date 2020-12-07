@@ -231,8 +231,6 @@ namespace DirectorySync
             comparison.RightDate = targetFileInfo.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm:ss");
             comparison.RightSize = targetFileInfo.Length;
 
-            using var fs1 = new FileStream(originalFileInfo.FullName, FileMode.Open, FileAccess.Read);
-            using var fs2 = new FileStream(targetFileInfo.FullName, FileMode.Open, FileAccess.Read);
 
             if ((originalFileInfo.LastWriteTimeUtc - targetFileInfo.LastWriteTimeUtc).TotalMinutes > 1)
             {
