@@ -228,17 +228,17 @@ namespace DirectorySync
             }
 
             comparison.RightName = targetFileInfo.FullName.Replace(folder2, "");
-            comparison.RightDate = targetFileInfo.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm:ss");
+            comparison.RightDate = targetFileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss");
             comparison.RightSize = targetFileInfo.Length;
 
 
-            if ((originalFileInfo.LastWriteTimeUtc - targetFileInfo.LastWriteTimeUtc).TotalMinutes > 1)
+            if (originalFileInfo.LastWriteTime.TimeOfDay > targetFileInfo.LastWriteTime.TimeOfDay)
             {
                 comparison.Status = MatchStatus.OriginalIsNewer;
                 return comparison;
             }
 
-            if ((originalFileInfo.LastWriteTimeUtc - targetFileInfo.LastWriteTimeUtc).TotalMinutes < 1)
+            if (originalFileInfo.LastWriteTime.TimeOfDay < targetFileInfo.LastWriteTime.TimeOfDay)
             {
                 comparison.Status = MatchStatus.TargetIsNewer;
                 return comparison;
