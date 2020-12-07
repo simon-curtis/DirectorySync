@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace FileCompare
 {
@@ -47,30 +45,16 @@ namespace FileCompare
 
         public async IAsyncEnumerable<FileInfo> SearchDirectoryAsync(DirectoryInfo directoryInfo)
         {
-            var subDirs = directoryInfo.GetDirectories();
-            var files = new List<FileInfo>();
-
-            var tasks = subDirs
-                .Where(subDir => !DirectoryHidden(subDir))
-                .Select(async subDir =>
-                {
-                    await foreach (var file in SearchDirectoryAsync(subDir)) 
-                        files.Add(file);
-                })
-                .ToList();
-
-
-            await Task.WhenAll(tasks);
-
-            foreach (var file in files)
-            {
-                yield return file;
-            }
-
             foreach (var file in directoryInfo.GetFiles())
             {
                 if (FileHidden(file.Name)) continue;
                 yield return file;
+            }
+            foreach (var subDir in directoryInfo.GetDirectories())
+            {
+                if (DirectoryHidden(subDir)) continue;
+                await foreach (var file in SearchDirectoryAsync(subDir))
+                    yield return file;
             }
         }
 
