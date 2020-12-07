@@ -166,16 +166,19 @@ namespace DirectorySync
         {
             if (string.IsNullOrEmpty(Folder1Path.FullName) || string.IsNullOrEmpty(Folder2Path.FullName))
                 return;
-
-            await GetFiles();
-        }
-
-        private async Task GetFiles()
-        {
+            
             ComparisonResults.Clear();
             LoadProgress.Maximum = 0;
             LoadProgress.Value = 0;
 
+            await GetFiles();
+            
+            ShowFilterChanged(null, null);
+            LoadProgress.Value = 0;
+        }
+
+        private async Task GetFiles()
+        {
             var folder1Path = Folder1Path.FullName;
             var folder2Path = Folder2Path.FullName;
 
@@ -187,11 +190,9 @@ namespace DirectorySync
             await foreach (var file in searchService.SearchDirectoryAsync(originalFolderInfo))
             {
                 LoadProgress.Maximum++;
-
                 tasks.Add(Task.Run(() =>
                 {
                     var matchResult = GetMatchStatus(folder1Path, folder2Path, file);
-
                     Dispatcher.Invoke(() =>
                     {
                         ComparisonResults.Add(matchResult);
@@ -199,14 +200,13 @@ namespace DirectorySync
                     });
                 }));
             }
+
             await Task.WhenAll(tasks);
-            ShowFilterChanged(null,null);
-            LoadProgress.Value = 0;
         }
 
-        private ComparisonResult GetMatchStatus(string folder1, string folder2, FileInfo fileInfo)
+        private static ComparisonResult GetMatchStatus(string baseDirectory, string targetDirectory, FileInfo fileInfo)
         {
-            var fileNameSplitIndex = Folder1Path.FullName.Length;
+            var fileNameSplitIndex = baseDirectory.Length + 1;
 
             var comparison = new ComparisonResult
             {
@@ -214,28 +214,28 @@ namespace DirectorySync
                 LeftDate = fileInfo.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm:ss"),
                 LeftSize = fileInfo.Length
             };
-            
-            var targetFileInfo = new FileInfo($"{folder2}\\{comparison.LeftName}");
+        
+            var targetFileInfo = new FileInfo($"{targetDirectory}\\{comparison.LeftName}");
 
             if (!targetFileInfo.Exists)
             {
-                comparison.Status = fileInfo.CreationTime < Folder2CreationDate
+                comparison.Status = fileInfo.CreationTime < targetFileInfo.CreationTime
                     ? MatchStatus.MissingAndCreatedBeforeFolder
                     : MatchStatus.MissingAndCreatedAfterFolder;
                 return comparison;
             }
 
-            comparison.RightName = targetFileInfo.FullName.Replace(folder2, "");
+            comparison.RightName = comparison.LeftName;
             comparison.RightDate = targetFileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss");
             comparison.RightSize = targetFileInfo.Length;
 
-            if (fileInfo.LastWriteTime.TimeOfDay > targetFileInfo.LastWriteTime.TimeOfDay)
+            if (fileInfo.LastWriteTime > targetFileInfo.LastWriteTime)
             {
                 comparison.Status = MatchStatus.OriginalIsNewer;
                 return comparison;
             }
 
-            if (fileInfo.LastWriteTime.TimeOfDay < targetFileInfo.LastWriteTime.TimeOfDay)
+            if (fileInfo.LastWriteTime < targetFileInfo.LastWriteTime)
             {
                 comparison.Status = MatchStatus.TargetIsNewer;
                 return comparison;
