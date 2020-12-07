@@ -337,9 +337,7 @@ namespace DirectorySync
         private void ShowFilterChanged(object sender, RoutedEventArgs e)
         {
             if (Results?.Items != null)
-            {
-                Results.Items.Filter = new Predicate<object>(IsResultVisible);
-            }
+                Results.Items.Filter = IsResultVisible;
         }
 
         private bool IsResultVisible(object obj)
