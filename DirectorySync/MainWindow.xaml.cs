@@ -273,11 +273,7 @@ namespace DirectorySync
 
         private void IgnoreFileName(object sender, RoutedEventArgs e)
         {
-            var filesToRemove = new List<ComparisonResult>();
-            foreach (var item in Results.SelectedItems)
-            {
-                filesToRemove.Add(item as ComparisonResult);
-            }
+            var filesToRemove = (from ComparisonResult item in Results.SelectedItems select item).ToList();
 
             foreach (var file in filesToRemove)
             {
