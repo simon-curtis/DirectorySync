@@ -130,6 +130,7 @@ namespace DirectorySync
 
         private void ComparisonResults_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
+            var identicalFiles = 0;
             var targetsMissing = 0;
             var newerOriginals = 0;
             var newerTargets = 0;
@@ -138,6 +139,9 @@ namespace DirectorySync
             {
                 switch (result.Status)
                 {
+                    case MatchStatus.FilesAreTheSame:
+                        identicalFiles++;
+                        break;
                     case MatchStatus.MissingAndCreatedAfterFolder:
                     case MatchStatus.MissingAndCreatedBeforeFolder:
                         targetsMissing++;
@@ -148,16 +152,14 @@ namespace DirectorySync
                     case MatchStatus.TargetIsNewer:
                         newerTargets++;
                         break;
-
-                    case MatchStatus.NotProcessed:
-                    case MatchStatus.FilesAreDifferent:
-                    case MatchStatus.FilesAreTheSame:
-                    default:
-                        throw new ArgumentOutOfRangeException();
                 }
             }
 
-            Total.Content = $"{ComparisonResults.Count} records.  Targets Missing: {targetsMissing}. Newer Originals: {newerOriginals}. Newer Targets: {newerTargets}";
+            Total.Content = $"{ComparisonResults.Count} Total Files :: " +
+                            $"Identical Files: {identicalFiles}. " +
+                            $"Targets Missing: {targetsMissing}. " +
+                            $"Newer Originals: {newerOriginals}. " +
+                            $"Newer Targets: {newerTargets}";
         }
 
         private async void RunCompare_Click(object sender, RoutedEventArgs e)
