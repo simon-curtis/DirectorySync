@@ -28,9 +28,14 @@ namespace DirectorySync
         private DateTime Folder1CreationDate;
         private DateTime Folder2CreationDate;
 
-        private string IgnoreFilePath {
+        private string IgnoreFilePath
+        {
             get => ingoresFilePath;
-            set { ingoresFilePath = value; IgnoreFilePathButton.Text = value.Split("\\")[^1].Replace(".ignores", ""); }
+            set
+            {
+                ingoresFilePath = value;
+                IgnoreFilePathButton.Text = value.Split("\\")[^1].Replace(".ignores", "");
+            }
         }
 
         private DirectoryInfo Folder1Path
@@ -55,12 +60,15 @@ namespace DirectorySync
             }
         }
 
-        
-        private string AppDataString => $@"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\DirectorySync";
+
+        private string AppDataString =>
+            $@"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\DirectorySync";
+
         private string LastRunPath => $@"{AppDataString}\.lastrun";
         private string IgnoresFolder => $@"{AppDataString}\ignores\";
 
-        protected ObservableCollection<ComparisonResult> ComparisonResults = new ObservableCollection<ComparisonResult>();
+        protected ObservableCollection<ComparisonResult> ComparisonResults =
+            new ObservableCollection<ComparisonResult>();
 
         public MainWindow()
         {
@@ -69,7 +77,8 @@ namespace DirectorySync
             ComparisonResults.CollectionChanged += ComparisonResults_CollectionChanged;
             Results.ItemsSource = ComparisonResults;
 
-            if (File.Exists(LastRunPath)) LoadSettings(); else FirstTimeSetup();
+            if (File.Exists(LastRunPath)) LoadSettings();
+            else FirstTimeSetup();
         }
 
         protected override void OnClosing(CancelEventArgs e)
@@ -89,7 +98,8 @@ namespace DirectorySync
 
         private void FirstTimeSetup()
         {
-            if (!Directory.Exists(IgnoresFolder)) {
+            if (!Directory.Exists(IgnoresFolder))
+            {
                 Directory.CreateDirectory(IgnoresFolder);
             }
 
@@ -166,13 +176,13 @@ namespace DirectorySync
         {
             if (string.IsNullOrEmpty(Folder1Path.FullName) || string.IsNullOrEmpty(Folder2Path.FullName))
                 return;
-            
+
             ComparisonResults.Clear();
             LoadProgress.Maximum = 0;
             LoadProgress.Value = 0;
 
             await GetFiles();
-            
+
             ShowFilterChanged(null, null);
             LoadProgress.Value = 0;
         }
@@ -214,7 +224,7 @@ namespace DirectorySync
                 LeftDate = fileInfo.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm:ss"),
                 LeftSize = fileInfo.Length
             };
-        
+
             var targetFileInfo = new FileInfo($"{targetDirectory}\\{comparison.LeftName}");
 
             if (!targetFileInfo.Exists)
@@ -298,7 +308,8 @@ namespace DirectorySync
             if (fullPathInfo.Directory == null) return;
             var relativePath = fullPathInfo.Directory.FullName.Replace(Folder1Path.FullName, "");
 
-            File.AppendAllText(IgnoreFilePath, "d: " + fullPathInfo.Directory.FullName.Replace(Folder1Path.Name, "")[1..] + "\r");
+            File.AppendAllText(IgnoreFilePath,
+                "d: " + fullPathInfo.Directory.FullName.Replace(Folder1Path.Name, "")[1..] + "\r");
             ComparisonResults.Remove(result);
             foreach (var res in ComparisonResults.Where(r => r.LeftName.StartsWith(relativePath)).ToArray())
             {
@@ -339,7 +350,7 @@ namespace DirectorySync
 
         private bool IsResultVisible(object obj)
         {
-            var result = (ComparisonResult)obj;
+            var result = (ComparisonResult) obj;
 
             if (SearchBox.Text != "" && !result.LeftName.ToLower().Contains(SearchBox.Text.ToLower()))
                 return false;
@@ -367,6 +378,7 @@ namespace DirectorySync
             {
                 IgnoreFilePath = openFileDialog.FileName;
             }
+
             SaveSettings();
         }
 
