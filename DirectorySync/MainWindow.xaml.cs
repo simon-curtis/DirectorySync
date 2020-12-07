@@ -256,29 +256,17 @@ namespace DirectorySync
 
         private async void CopyFile(object sender, RoutedEventArgs e)
         {
-            var filesToRemove = new List<ComparisonResult>();
-            foreach (var item in Results.SelectedItems)
+            var filesToRemove = (from ComparisonResult item in Results.SelectedItems select item).ToList();
+            var tasks = filesToRemove.Select(file => Task.Run(() =>
             {
-                filesToRemove.Add(item as ComparisonResult);
-            }
+                var originalPath = Folder1Path.FullName + "/" + file.LeftName;
+                var targetPathInfo = new FileInfo(Folder2Path.FullName + "/" + file.LeftName);
 
-            var tasks = new List<Task>();
-
-            foreach (var file in filesToRemove)
-            {
-                tasks.Add(Task.Run(() =>
-                {
-                    string originalPath = Folder1Path.FullName + "/" + file.LeftName;
-                    FileInfo targetPathInfo = new FileInfo(Folder2Path.FullName + "/" + file.LeftName);
-                    if (!targetPathInfo.Directory.Exists)
-                        targetPathInfo.Directory.Create();
-                    File.Copy(originalPath, targetPathInfo.FullName, true);
-                    Dispatcher.Invoke(() =>
-                    {
-                        ComparisonResults.Remove(file);
-                    });
-                }));
-            }
+                if (targetPathInfo.Directory != null && !targetPathInfo.Directory.Exists)
+                    targetPathInfo.Directory.Create();
+                File.Copy(originalPath, targetPathInfo.FullName, true);
+                Dispatcher.Invoke(() => { ComparisonResults.Remove(file); });
+            }));
 
             await Task.WhenAll(tasks);
         }
