@@ -400,7 +400,7 @@ namespace DirectorySync
 
         private void TestPath_OnClick(object sender, RoutedEventArgs e)
         {
-            var window = new TestPathWindow(IgnoreFilePath);
+            var window = new TestPathWindow(IgnoreFilePath, _path1.FullName);
             window.ShowDialog();
         }
     }
