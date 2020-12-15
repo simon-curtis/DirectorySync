@@ -186,15 +186,15 @@
                 </Grid.ColumnDefinitions>
 
                 <CheckBox Grid.Column="0" Style="{DynamicResource CheckBoxStyle1}" Name="ShowIdentical"
-                          Margin="0 5 15 0" IsChecked="False" Content="Show Identical" Checked="ShowFilterChanged"
+                          Margin="0 5 15 0" IsChecked="False" Content="Identical" Checked="ShowFilterChanged"
                           Unchecked="ShowFilterChanged" />
                 <CheckBox Grid.Column="1" Style="{DynamicResource CheckBoxStyle1}" Name="ShowMissing" Margin="0 5 15 0"
-                          IsChecked="True" Content="Show Missing" Checked="ShowFilterChanged" Unchecked="ShowFilterChanged" />
+                          IsChecked="True" Content="Missing" Checked="ShowFilterChanged" Unchecked="ShowFilterChanged" />
                 <CheckBox Grid.Column="2" Style="{DynamicResource CheckBoxStyle1}" Name="ShowOriginalNewer"
-                          Margin="0 5 15 0" IsChecked="True" Content="Show Original Newer" Checked="ShowFilterChanged"
+                          Margin="0 5 15 0" IsChecked="True" Content="Original Newer" Checked="ShowFilterChanged"
                           Unchecked="ShowFilterChanged" />
                 <CheckBox Grid.Column="3" Style="{DynamicResource CheckBoxStyle1}" Name="ShowTargetNewer"
-                          Margin="0 5 15 0" IsChecked="True" Content="Show Target Newer" Checked="ShowFilterChanged"
+                          Margin="0 5 15 0" IsChecked="True" Content="Target Newer" Checked="ShowFilterChanged"
                           Unchecked="ShowFilterChanged" />
                
                 <Label Grid.Column="5" HorizontalAlignment="Right">Search:</Label>
