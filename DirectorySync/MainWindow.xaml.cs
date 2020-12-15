@@ -190,7 +190,7 @@ namespace DirectorySync
             var folder1Path = Folder1Path.FullName;
             var folder2Path = Folder2Path.FullName;
 
-            var searchService = new FileFinderService(IgnoreFilePath, folder1Path);
+            var searchService = new FileFinder(IgnoreFilePath, folder1Path);
             var originalFolderInfo = new DirectoryInfo(folder1Path);
             if (!originalFolderInfo.Exists) return;
 

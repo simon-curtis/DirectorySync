@@ -23,7 +23,7 @@ namespace DirectorySync
         {
             PathToTest.Text = PathToTest.Text.Replace("\"", "");
             
-            var finder = new FileFinderService(FilterPath, OriginalPath);
+            var finder = new FileFinder(FilterPath, OriginalPath);
             Results.Text = "";
 
             var (directoryFilters, fileFilters) = finder.TestFile(PathToTest.Text);

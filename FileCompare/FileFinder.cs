@@ -6,13 +6,13 @@ using System.Text.RegularExpressions;
 
 namespace FileCompare
 {
-    public class FileFinderService
+    public class FileFinder
     {
         private readonly Regex _directoryFilters;
         private readonly Regex _fileFilters;
         private readonly string _originalFolderPath;
 
-        public FileFinderService(string filterPath, string originalFolderPath)
+        public FileFinder(string filterPath, string originalFolderPath)
         {
             _originalFolderPath = originalFolderPath;
 
