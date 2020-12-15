@@ -237,13 +237,13 @@ namespace DirectorySync
             comparison.RightDate = targetFileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss");
             comparison.RightSize = targetFileInfo.Length;
 
-            if (fileInfo.LastWriteTime > targetFileInfo.LastWriteTime)
+            if (fileInfo.LastWriteTime > targetFileInfo.LastWriteTime.AddMinutes(1))
             {
                 comparison.Status = MatchStatus.OriginalIsNewer;
                 return comparison;
             }
 
-            if (fileInfo.LastWriteTime < targetFileInfo.LastWriteTime)
+            if (fileInfo.LastWriteTime < targetFileInfo.LastWriteTime.AddMinutes(-1))
             {
                 comparison.Status = MatchStatus.TargetIsNewer;
                 return comparison;
