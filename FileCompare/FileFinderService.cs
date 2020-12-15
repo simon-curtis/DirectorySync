@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -53,39 +54,27 @@ namespace FileCompare
                     yield return file;
         }
 
-        public static IEnumerable<string> TestFile(string filterPath, string relativeFilePath)
+        public (IEnumerable<string> directoryExlusions, IEnumerable<string> fileExclusions) TestFile(string filePath)
         {
-            var directoryFiltersStrings = new List<string>();
-            var fileFiltersStrings = new List<string>();
+            if (!filePath.Contains(_originalFolderPath))
+                return (Array.Empty<string>(), Array.Empty<string>());
 
-            foreach (var line in File.ReadAllLines(filterPath))
-            {
-                if (string.IsNullOrEmpty(line)) continue;
+            var fileInfo = new FileInfo(filePath);
 
-                var linePart = line[2..].Trim();
+            if (!fileInfo.Exists)
+                return (Array.Empty<string>(), Array.Empty<string>());
 
-                switch (line[0])
-                {
-                    case 'd':
-                        directoryFiltersStrings.Add($@"({linePart}$)");
-                        break;
+            var subDirectoryPath = fileInfo.DirectoryName?.Replace(_originalFolderPath, "");
 
-                    case 'f':
-                        fileFiltersStrings.Add($@"({linePart}$)");
-                        break;
-                }
-            }
+            var directoryExlusions = string.IsNullOrEmpty(subDirectoryPath)  
+                ? Array.Empty<string>()
+                : _directoryFilters
+                    .Matches(subDirectoryPath)
+                    .Select(match => $"Directory: {match.Value}");
 
-            var directoryFilters = new Regex(string.Join('|', directoryFiltersStrings), RegexOptions.IgnoreCase);
-            var fileFilters = new Regex(string.Join('|', fileFiltersStrings), RegexOptions.IgnoreCase);
+            var fileExclusions = _fileFilters.Matches(fileInfo.Name).Select(match => $"File: {match.Value}");
 
-            var directory = string.Join("\\", relativeFilePath.Split('\\')[..^1]);
-            var directoryExlusions = directoryFilters.Matches(directory).Select(match => $"{match.Name} {match.Value}");
-
-            var filename = relativeFilePath.Split('\\')[^1];
-            var fileExclusions = fileFilters.Matches(filename).Select(match => $"{match.Name} {match.Value}");
-
-            return directoryExlusions.Concat(fileExclusions).ToArray();
+            return (directoryExlusions, fileExclusions);
         }
     }
 }
