@@ -1,4 +1,7 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 using System.Windows;
 using FileCompare;
 
@@ -6,21 +9,26 @@ namespace DirectorySync
 {
     public partial class TestPathWindow : Window
     {
-        private string FilterPath { get; set; }
+        private string FilterPath { get; }
+        private string OriginalPath { get; }
 
-        public TestPathWindow(string filterPath)
+        public TestPathWindow(string filterPath, string originalPath)
         {
             FilterPath = filterPath;
+            OriginalPath = originalPath;
             InitializeComponent();
         }
 
         private void RunTest_OnClick(object sender, RoutedEventArgs e)
         {
-            var matches = FileFinderService.TestFile(FilterPath, PathToTest.Text);
-            foreach (var match in matches)
-            {
-                Results.Text += match + "\r";
-            }
+            PathToTest.Text = PathToTest.Text.Replace("\"", "");
+            
+            var finder = new FileFinderService(FilterPath, OriginalPath);
+            Results.Text = "";
+
+            var (directoryFilters, fileFilters) = finder.TestFile(PathToTest.Text);
+            Results.Text += string.Join("\r", directoryFilters);
+            Results.Text += string.Join("\r", fileFilters);
         }
     }
 }

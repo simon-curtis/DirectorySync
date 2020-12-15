@@ -4,16 +4,18 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d"
-        Title="TestPath" Height="450" Width="800">
+        Title="TestPath" Height="230" Width="470">
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="25"/>
+            <RowDefinition Height="10"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             
@@ -27,7 +29,7 @@
                 </DockPanel>
             </Border>
 
-            <Button Grid.Column="1" Name="RunTest"
+            <Button Grid.Column="2" Name="RunTest"
                     TextBlock.TextAlignment="Center"
                     FontSize="13"
                     Click="RunTest_OnClick"
@@ -37,7 +39,7 @@
             </Button>
         </Grid>
         
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <TextBlock Name="Results">Run test to get results</TextBlock>
         </Grid>
     </Grid>
