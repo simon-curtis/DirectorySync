@@ -163,11 +163,11 @@ namespace DirectorySync
                 }
             }
 
-            Total.Content = $"{_comparisonResults.Count} Total Files :: " +
-                            $"Identical Files: {identicalFiles}. " +
-                            $"Targets Missing: {targetsMissing}. " +
-                            $"Newer Originals: {newerOriginals}. " +
-                            $"Newer Targets: {newerTargets}";
+            ShowIdentical.Content = $"Identical ({identicalFiles})";
+            ShowMissing.Content = $"Missing ({targetsMissing})";
+            ShowOriginalNewer.Content = $"Original Newer ({newerOriginals})";
+            ShowTargetNewer.Content = $"Target Newer ({newerTargets})";
+            Total.Content = $"{_comparisonResults.Count} file(s)";
         }
 
         private async void RunCompare_Click(object sender, RoutedEventArgs e)
