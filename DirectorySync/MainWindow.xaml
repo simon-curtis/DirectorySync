@@ -4,12 +4,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DirectorySync"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         mc:Ignorable="d"
         Title="Directory Sync Tool"
         ResizeMode="CanResize" 
         MouseDown="Window_MouseDown" 
         WindowStartupLocation="CenterScreen" 
-        Height="482" Width="1032"
+        Height="569" Width="1140"
     >
     <Window.Resources>
         <Style x:Key="FocusVisual">
@@ -100,6 +101,137 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="FocusVisual1">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Margin="2" StrokeDashArray="1 2" SnapsToDevicePixels="true" StrokeThickness="1" Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="FocusVisual2">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Margin="2" StrokeDashArray="1 2" SnapsToDevicePixels="true" StrokeThickness="1" Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <SolidColorBrush x:Key="Button.Static.Background" Color="#FFDDDDDD"/>
+        <SolidColorBrush x:Key="Button.Static.Border" Color="#FF707070"/>
+        <SolidColorBrush x:Key="Button.MouseOver.Background" Color="#FFBEE6FD"/>
+        <SolidColorBrush x:Key="Button.MouseOver.Border" Color="#FF3C7FB1"/>
+        <SolidColorBrush x:Key="Button.Pressed.Background" Color="#FFC4E5F6"/>
+        <SolidColorBrush x:Key="Button.Pressed.Border" Color="#FF2C628B"/>
+        <SolidColorBrush x:Key="Button.Disabled.Background" Color="#FFF4F4F4"/>
+        <SolidColorBrush x:Key="Button.Disabled.Border" Color="#FFADB2B5"/>
+        <SolidColorBrush x:Key="Button.Disabled.Foreground" Color="#FF838383"/>
+        <Style x:Key="ButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual2}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Button.Static.Border}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                SnapsToDevicePixels="true">
+                            <ContentPresenter x:Name="contentPresenter" 
+                                              Focusable="False" 
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                              Margin="{TemplateBinding Padding}" 
+                                              RecognizesAccessKey="True" 
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsDefaulted" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.MouseOver.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.MouseOver.Border}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.Pressed.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.Pressed.Border}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="TextElement.Foreground" TargetName="contentPresenter" Value="{StaticResource Button.Disabled.Foreground}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="FocusVisual3">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Margin="2" StrokeDashArray="1 2" SnapsToDevicePixels="true" StrokeThickness="1" Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <SolidColorBrush x:Key="Button.Static.Background1" Color="#FFDDDDDD"/>
+        <SolidColorBrush x:Key="Button.Static.Border1" Color="#FF707070"/>
+        <SolidColorBrush x:Key="Button.MouseOver.Background1" Color="#FFBEE6FD"/>
+        <SolidColorBrush x:Key="Button.MouseOver.Border1" Color="#FF3C7FB1"/>
+        <SolidColorBrush x:Key="Button.Pressed.Background1" Color="#FFC4E5F6"/>
+        <SolidColorBrush x:Key="Button.Pressed.Border1" Color="#FF2C628B"/>
+        <SolidColorBrush x:Key="Button.Disabled.Background1" Color="#FFF4F4F4"/>
+        <SolidColorBrush x:Key="Button.Disabled.Border1" Color="#FFADB2B5"/>
+        <SolidColorBrush x:Key="Button.Disabled.Foreground1" Color="#FF838383"/>
+        <Style x:Key="Button" TargetType="{x:Type Button}">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual3}"/>
+            <Setter Property="Background" Value="{StaticResource Button.Static.Background1}"/>
+            <Setter Property="BorderBrush" Value="LightGray"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="3 1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" CornerRadius="3" Background="{TemplateBinding Background}" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" SnapsToDevicePixels="true">
+                            <ContentPresenter x:Name="contentPresenter" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsDefaulted" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.MouseOver.Background1}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.MouseOver.Border1}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.Pressed.Background1}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.Pressed.Border1}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Background" TargetName="border" Value="{StaticResource Button.Disabled.Background1}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.Disabled.Border1}"/>
+                                <Setter Property="TextElement.Foreground" TargetName="contentPresenter" Value="{StaticResource Button.Disabled.Foreground1}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+
+
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -107,7 +239,7 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="5" />
         </Grid.RowDefinitions>
-        
+
         <DockPanel Grid.Row="0">
             <Menu DockPanel.Dock="Top">
                 <MenuItem Header="_Tools">
@@ -117,12 +249,12 @@
                 </MenuItem>
             </Menu>
         </DockPanel>
-        
+
         <Grid Grid.Row="1" ClipToBounds="True" Margin="16">
             <Grid.RowDefinitions>
-                <RowDefinition Height="22"/>
+                <RowDefinition Height="25"/>
                 <RowDefinition Height="10"/>
-                <RowDefinition Height="auto"/>
+                <RowDefinition Height="25"/>
                 <RowDefinition Height="10"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="auto"/>
@@ -131,7 +263,9 @@
             <Grid Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="15" />
+                    <ColumnDefinition Width="5" />
+                    <ColumnDefinition Width="25" />
+                    <ColumnDefinition Width="5" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="15" />
                     <ColumnDefinition Width="auto" />
@@ -140,66 +274,143 @@
                 </Grid.ColumnDefinitions>
 
                 <Border Grid.Column="0" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2">
-                    <DockPanel Grid.Column="2" Margin="5 0">
-                        <TextBlock Foreground="Gray" Margin="0 0 5 0" VerticalAlignment="Center">ORIGINAL:</TextBlock>
-                        <TextBlock Name="Folder1PathTextBox" HorizontalAlignment="Stretch" VerticalAlignment="Center" MouseDown="Folder1Path_MouseDown"></TextBlock>
+                    <DockPanel Margin="5 0" VerticalAlignment="Center">
+                        <iconPacks:PackIconIonicons Foreground="Gray" Margin="0 0 10 0" Kind="FolderiOS"/>
+                        <TextBlock Name="LeftPathTextBox" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                                   MouseDown="Folder1Path_MouseDown" />
                     </DockPanel>
                 </Border>
-
-                <Border Grid.Column="2" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2">
-                    <DockPanel Grid.Column="2" Margin="5 0">
-                        <TextBlock HorizontalAlignment="Left" Foreground="Gray" Margin="0 0 5 0" VerticalAlignment="Center">TARGET:</TextBlock>
-                        <TextBlock Name="Folder2PathTextBox" HorizontalAlignment="Stretch" VerticalAlignment="Center" MouseDown="Folder2Path_MouseDown"></TextBlock>
-                    </DockPanel>
-                </Border>
-
-                <Border Grid.Column="4" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2" >
-                    <DockPanel Grid.Column="0" Margin="5 0">
-                        <TextBlock x:Name="IgnoreFilePathButton" Foreground="Gray"
-                                   VerticalAlignment="Center" 
-                                   MouseDown="IgnoreFilePath_MouseDown" 
-                                   Text="Select Ignores File"/>
-                    </DockPanel>
-                </Border>
-                
-                <Button Name="RunCompare" Grid.Column="6"
-                    TextBlock.TextAlignment="Center" 
-                    FontSize="13"
-                    Click="RunCompare_Click"
-                    Background="White"
-                       BorderBrush="White"
-
-                    >
-                    <Image Source="/Resources/play.png" Width="16" Height="16" />
+ 
+                <Button Grid.Column="2" 
+                        Name="SwapPaths"
+                        Click="SwapPaths_Click"
+                        IsEnabled="True"
+                        Foreground="Green"
+                        Style="{DynamicResource ButtonStyle}">
+                    <iconPacks:PackIconIonicons Kind="SwapiOS" />
                 </Button>
+
+                <Border Grid.Column="4" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2">
+                    <DockPanel Margin="5 0" VerticalAlignment="Center">
+                         <iconPacks:PackIconIonicons Foreground="Gray" Margin="0 0 10 0" Kind="FolderiOS"/>
+                        <TextBlock Name="RightPathTextBox" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                                   MouseDown="Folder2Path_MouseDown" />
+                    </DockPanel>
+                </Border>
+
+                <Border Grid.Column="6" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2">
+                    <Grid Margin="5 0" Width="200px">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="auto"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock  Grid.Column="0"
+                                    HorizontalAlignment="Left" 
+                                    Foreground="Gray" 
+                                    Margin="0 0 5 0"
+                                    VerticalAlignment="Center">
+                            FILTER:
+                        </TextBlock>
+
+                        <TextBlock  Grid.Column="1"
+                                    Name="ChangeIgnoreFilePathButton" 
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center" 
+                                    MouseDown="ChangeIgnoreFilePathButton_MouseDown"/>
+
+                        <Button Grid.Column="2" 
+                                Name="SaveChanges"
+                                Click="SaveChanges_OnClick"
+                                IsEnabled="False"
+                                Foreground="Green"
+                                Style="{DynamicResource ButtonStyle}">
+                            SAVE
+                        </Button>
+
+                        <Button Grid.Column="4"
+                                Name="ClearChanges"
+                                Click="ClearChanges_OnClick"
+                                IsEnabled="False"
+                                Foreground="Red"
+                                Style="{DynamicResource ButtonStyle}">
+                            RESET
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <Button Style="{DynamicResource Button}" 
+                        Name="RunCompare" 
+                        Grid.Column="10"
+                        TextBlock.TextAlignment="Center" 
+                        FontSize="12"
+                        Click="RunCompare_Click"
+                        Foreground="Green"
+                        Background="Transparent"
+                >
+                    <iconPacks:PackIconIonicons Kind="PlayCircleiOS" />
+                </Button>
+
             </Grid>
 
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="350" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="auto" />
                     <ColumnDefinition Width="auto" />
                     <ColumnDefinition Width="auto" />
                     <ColumnDefinition Width="auto" />
                     <ColumnDefinition Width="auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="auto" />
-                    <ColumnDefinition Width="300" />
                 </Grid.ColumnDefinitions>
 
-                <CheckBox Grid.Column="0" Style="{DynamicResource CheckBoxStyle1}" Name="ShowIdentical"
+                <Border Grid.Column="0" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2">
+                    <DockPanel Margin="5 0" VerticalAlignment="Center">
+                        <Label Grid.Column="0" HorizontalAlignment="Right" Padding="0">Search:</Label>
+                        <TextBox Grid.Column="1" Name="SearchBox" HorizontalAlignment="Stretch"
+                                 VerticalContentAlignment="Center"  KeyUp="HandleSearchBox_KeyUp"
+                                 BorderBrush="Transparent"/>
+                    </DockPanel>
+                </Border>
+                
+                <CheckBox Grid.Column="2" Style="{DynamicResource CheckBoxStyle1}" Name="ShowIdentical"
                           Margin="0 5 15 0" IsChecked="False" Content="Identical" Checked="ShowFilterChanged"
                           Unchecked="ShowFilterChanged" />
-                <CheckBox Grid.Column="1" Style="{DynamicResource CheckBoxStyle1}" Name="ShowMissing" Margin="0 5 15 0"
-                          IsChecked="True" Content="Missing" Checked="ShowFilterChanged" Unchecked="ShowFilterChanged" />
-                <CheckBox Grid.Column="2" Style="{DynamicResource CheckBoxStyle1}" Name="ShowOriginalNewer"
+
+                <CheckBox Grid.Column="3" Style="{DynamicResource CheckBoxStyle1}" Name="ShowLeftMissing" Margin="0 5 15 0"
+                          IsChecked="True" Content="Left Missing" Checked="ShowFilterChanged" Unchecked="ShowFilterChanged" />
+
+                <CheckBox Grid.Column="4" Style="{DynamicResource CheckBoxStyle1}" Name="ShowOriginalNewer"
                           Margin="0 5 15 0" IsChecked="True" Content="Original Newer" Checked="ShowFilterChanged"
                           Unchecked="ShowFilterChanged" />
-                <CheckBox Grid.Column="3" Style="{DynamicResource CheckBoxStyle1}" Name="ShowTargetNewer"
+
+                <CheckBox Grid.Column="5" Style="{DynamicResource CheckBoxStyle1}" Name="ShowRightMissing" Margin="0 5 15 0"
+                          IsChecked="True" Content="Right Missing" Checked="ShowFilterChanged" Unchecked="ShowFilterChanged" />
+
+                <CheckBox Grid.Column="6" Style="{DynamicResource CheckBoxStyle1}" Name="ShowTargetNewer"
                           Margin="0 5 15 0" IsChecked="True" Content="Target Newer" Checked="ShowFilterChanged"
                           Unchecked="ShowFilterChanged" />
-               
-                <Label Grid.Column="5" HorizontalAlignment="Right">Search:</Label>
-                <TextBox Grid.Column="6" Name="SearchBox" HorizontalAlignment="Stretch"
-                         VerticalContentAlignment="Center" KeyUp="SearchBox_KeyUp" />
+
+                <Button Style="{DynamicResource Button}" 
+                        Grid.Column="8"
+                        Name="CommitChanges" 
+                        Click="CommitChanges_Click"
+                        TextBlock.TextAlignment="Center" 
+                        FontSize="12"
+                        Foreground="Green"
+                        Background="Transparent"
+                        Margin="10 0"
+                >
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <iconPacks:PackIconIonicons Kind="FastforwardiOS" Margin="0 0 5 0"/>
+                        <TextBlock>Commit Changes</TextBlock>
+                    </StackPanel>
+                </Button>
             </Grid>
 
             <Grid Grid.Row="4">
@@ -212,7 +423,11 @@
                 >
                     <DataGrid.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Copy Right" Click="CopyFile" />
+                            <MenuItem Header="Do Nothing" Click="SetDoNothing" />
+                            <MenuItem Header="Copy Right" Click="SetCopyFileRight" />
+                            <MenuItem Header="Copy Left" Click="SetCopyFileLeft" />
+                            <MenuItem Header="Delete File" Click="SetDeleteFile"/>
+                            <Separator />
                             <MenuItem Header="Ignore File (Name)" Click="IgnoreFileName" />
                             <MenuItem Header="Ignore File (Exact Path)" Click="IgnoreFileFullPath" />
                             <MenuItem Header="Ignore Folder" Click="IgnoreFolder" />
@@ -220,11 +435,20 @@
                         </ContextMenu>
                     </DataGrid.ContextMenu>
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Original Name" Width="4*" Binding="{Binding LeftName}"/>
-                        <DataGridTextColumn Header="Original Size" Width="1*" Binding="{Binding LeftSize}"/>
+                        <DataGridTextColumn Header="Original Name" Width="4*" Binding="{Binding Name}"/>
+                        <DataGridTextColumn Header="Original Size (B)" Width="1*" Binding="{Binding LeftSize}"/>
                         <DataGridTextColumn Header="Original Date" Width="1*" Binding="{Binding LeftDate}"/>
+                        <DataGridTemplateColumn Header="Action" Width="auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <iconPacks:PackIconIonicons Kind="{Binding ActionIcon}" Foreground="{Binding ActionIconColour}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTextColumn Header="Target Date" Width="1*" Binding="{Binding RightDate}"/>
-                        <DataGridTextColumn Header="Target Size" Width="1*" Binding="{Binding RightSize}"/>
+                        <DataGridTextColumn Header="Target Size (B)" Width="1*" Binding="{Binding RightSize}"/>
                         <DataGridTextColumn Header="Status" Width="2*" Binding="{Binding Status}"/>
                     </DataGrid.Columns>
                 </DataGrid>

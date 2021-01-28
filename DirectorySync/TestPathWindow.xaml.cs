@@ -23,10 +23,10 @@ namespace DirectorySync
         {
             PathToTest.Text = PathToTest.Text.Replace("\"", "");
             
-            var finder = new FileFinder(FilterPath, OriginalPath);
+            var finder = new FileFinder(FilterPath);
             Results.Text = "";
 
-            var (directoryFilters, fileFilters) = finder.TestFile(PathToTest.Text);
+            var (directoryFilters, fileFilters) = finder.TestFile(OriginalPath, PathToTest.Text);
             Results.Text += string.Join("\r", directoryFilters);
             Results.Text += string.Join("\r", fileFilters);
         }

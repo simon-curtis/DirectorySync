@@ -2,24 +2,28 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace FileCompare
 {
     public class FileFinder
     {
-        private readonly Regex _directoryFilters;
-        private readonly Regex _fileFilters;
-        private readonly string _originalFolderPath;
+        private readonly string _filterPath;
+        private Regex _directoryFilters;
+        private ICollection<string> DirectoryPaths { get; set; } = new List<string>();
+        private Regex _fileFilters;
+        private ICollection<string> FilePaths { get; set; } = new List<string>();
 
-        public FileFinder(string filterPath, string originalFolderPath)
+        public FileFinder(string filterPath)
         {
-            _originalFolderPath = originalFolderPath;
-
-            var directoryFilters = new List<string>();
-            var fileFilters = new List<string>();
-
-            foreach (var line in File.ReadAllLines(filterPath))
+            _filterPath = filterPath;
+            LoadFiltersFromFile();
+        }
+        
+        private void LoadFiltersFromFile()
+        {
+            foreach (var line in File.ReadAllLines(_filterPath))
             {
                 if (string.IsNullOrEmpty(line)) continue;
 
@@ -28,43 +32,83 @@ namespace FileCompare
                 switch (line[0])
                 {
                     case 'd':
-                        directoryFilters.Add($@"({linePart}$)");
+                        DirectoryPaths.Add(linePart);
                         break;
 
                     case 'f':
-                        fileFilters.Add($@"({linePart}$)");
+                        FilePaths.Add(linePart);
                         break;
                 }
             }
-
-            _directoryFilters = new Regex(string.Join('|', directoryFilters), RegexOptions.IgnoreCase);
-            _fileFilters = new Regex(string.Join('|', fileFilters), RegexOptions.IgnoreCase);
+            SetRegexFilters();
         }
 
-        private bool IncludeDirectory(DirectoryInfo subDir) => !_directoryFilters.IsMatch(subDir.FullName.Replace(_originalFolderPath, ""));
-        private bool IncludeFile(FileInfo file) => !_fileFilters.IsMatch(file.Name);
-
-        public async IAsyncEnumerable<FileInfo> SearchDirectoryAsync(DirectoryInfo directoryInfo)
+        private void SetRegexFilters()
         {
-            foreach (var file in directoryInfo.GetFiles().Where(IncludeFile))
+            static Regex CreateRegexString(ICollection<string> paths, Func<string, string> regexTemplate) =>
+                new Regex(string.Join('|', paths.Select(regexTemplate)), RegexOptions.IgnoreCase);
+
+            _directoryFilters = CreateRegexString(DirectoryPaths, path => $@"({path})");
+            _fileFilters = CreateRegexString(FilePaths, path => $@"({path}$)");
+        }
+
+        public async IAsyncEnumerable<FileInfo> SearchDirectoryAsync(int relativePathIndex, DirectoryInfo directoryInfo)
+        {
+            foreach (var file in directoryInfo.GetFiles())
+            {
+                if (_fileFilters.IsMatch(file.FullName[relativePathIndex..])) continue;
                 yield return file;
-            
-            foreach (var dir in directoryInfo.GetDirectories().Where(IncludeDirectory))
-                await foreach (var file in SearchDirectoryAsync(dir))
+            }
+
+            foreach (var dir in directoryInfo.GetDirectories())
+            {
+                if (_directoryFilters.IsMatch(dir.FullName[relativePathIndex..])) continue;
+                await foreach (var file in SearchDirectoryAsync(relativePathIndex, dir))
                     yield return file;
+            }
         }
 
-        public (IEnumerable<string> directoryExlusions, IEnumerable<string> fileExclusions) TestFile(string filePath)
+        /// <summary>
+        /// Adds the relative path to the directory filter list, this method will escape the string
+        /// </summary>
+        /// <param name="relativePath">Unescaped directory path</param>
+        /// <example>"\data\settings"</example>
+        public void IgnoreFolderPath(string relativePath)
         {
-            if (!filePath.Contains(_originalFolderPath))
-                return (Array.Empty<string>(), Array.Empty<string>());
-
+            DirectoryPaths.Add(Regex.Escape(relativePath));
+            SetRegexFilters();
+        }
+        
+        /// <summary>
+        /// Adds the relative path to the file filter list, this method will escape the string
+        /// </summary>
+        /// <param name="relativePath">Unescaped file path</param>
+        /// <example>"\data\settings\setting.dat"</example>
+        public void IgnoreFilePath(string relativePath)
+        {
+            FilePaths.Add(Regex.Escape(relativePath));
+            SetRegexFilters();
+        }
+        
+        /// <summary>
+        /// Adds the file name to the file filter list, this method will escape the string
+        /// </summary>
+        /// <param name="fileName">Unescaped file name</param>
+        /// <example>"setting.dat"</example>
+        public void IgnoreFileName(string fileName)
+        {
+            FilePaths.Add(Regex.Escape(fileName));
+            SetRegexFilters();
+        }
+        
+        public (IEnumerable<string> directoryExlusions, IEnumerable<string> fileExclusions) TestFile(string basePath, string filePath)
+        {
             var fileInfo = new FileInfo(filePath);
 
             if (!fileInfo.Exists)
                 return (Array.Empty<string>(), Array.Empty<string>());
 
-            var subDirectoryPath = fileInfo.DirectoryName?.Replace(_originalFolderPath, "");
+            var subDirectoryPath = fileInfo.DirectoryName?.Replace(basePath, "");
 
             var directoryExlusions = string.IsNullOrEmpty(subDirectoryPath)  
                 ? Array.Empty<string>()
@@ -75,6 +119,33 @@ namespace FileCompare
             var fileExclusions = _fileFilters.Matches(fileInfo.Name).Select(match => $"File: {match.Value}");
 
             return (directoryExlusions, fileExclusions);
+        }
+
+        public string SaveFilters()
+        {
+            try
+            {
+                var sb = new StringBuilder();
+
+                foreach (var line in DirectoryPaths.OrderBy(path => path).Select(path => $"d: {path}"))
+                    sb.AppendLine(line);
+
+                foreach (var line in FilePaths.OrderBy(path => path).Select(path => $"f: {path}"))
+                    sb.AppendLine(line);
+
+                File.WriteAllText(_filterPath, sb.ToString());
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+
+            return "filters saved successfully";
+        }
+
+        public void ResetFilters()
+        {
+            this.LoadFiltersFromFile();
         }
     }
 }

@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace FileCompare
+namespace DirectorySync.Models
 {
     public enum MatchStatus
     {
         NotProcessed,
-        MissingAndCreatedBeforeFolder,
-        MissingAndCreatedAfterFolder,
+        MissingFromLeft,
+        MissingFromRight,
         OriginalIsNewer,
         FilesAreDifferent,
         FilesAreTheSame,

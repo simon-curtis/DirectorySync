@@ -5,6 +5,7 @@
     <TargetFramework>net5.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,6 +32,9 @@
   <ItemGroup>
     <PackageReference Include="DiffPlex" Version="1.6.3" />
     <PackageReference Include="DiffPlex.Wpf" Version="1.1.1" />
+    <PackageReference Include="MahApps.Metro.IconPacks.Entypo" Version="4.8.0" />
+    <PackageReference Include="MahApps.Metro.IconPacks.Ionicons" Version="4.8.0" />
+    <PackageReference Include="MahApps.Metro.IconPacks.Octicons" Version="4.8.0" />
   </ItemGroup>
 
 </Project>
