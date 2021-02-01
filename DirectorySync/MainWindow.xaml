@@ -10,7 +10,7 @@
         ResizeMode="CanResize" 
         MouseDown="Window_MouseDown" 
         WindowStartupLocation="CenterScreen" 
-        Height="569" Width="1140"
+        Height="680" Width="1360"
     >
     <Window.Resources>
         <Style x:Key="FocusVisual">
@@ -361,50 +361,51 @@
                     <ColumnDefinition Width="350" />
                     <ColumnDefinition Width="10" />
                     <ColumnDefinition Width="auto" />
-                    <ColumnDefinition Width="auto" />
-                    <ColumnDefinition Width="auto" />
-                    <ColumnDefinition Width="auto" />
-                    <ColumnDefinition Width="auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="auto" />
                 </Grid.ColumnDefinitions>
 
                 <Border Grid.Column="0" BorderBrush="LightGray" BorderThickness="1" CornerRadius="2">
                     <DockPanel Margin="5 0" VerticalAlignment="Center">
-                        <Label Grid.Column="0" HorizontalAlignment="Right" Padding="0">Search:</Label>
+                        <Label Grid.Column="0" HorizontalAlignment="Right" Padding="0" Margin="0 0 5 0">Search:</Label>
                         <TextBox Grid.Column="1" Name="SearchBox" HorizontalAlignment="Stretch"
                                  VerticalContentAlignment="Center"  KeyUp="HandleSearchBox_KeyUp"
                                  BorderBrush="Transparent"/>
                     </DockPanel>
                 </Border>
                 
-                <CheckBox Grid.Column="2" Style="{DynamicResource CheckBoxStyle1}" Name="ShowIdentical"
-                          Margin="0 5 15 0" IsChecked="False" Content="Identical" Checked="ShowFilterChanged"
-                          Unchecked="ShowFilterChanged" />
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <CheckBox Style="{DynamicResource CheckBoxStyle1}" Name="ShowIdentical"
+                              Margin="0 5 15 0" IsChecked="False" Content="Identical" Checked="ShowFilterChanged"
+                              Unchecked="ShowFilterChanged" />
 
-                <CheckBox Grid.Column="3" Style="{DynamicResource CheckBoxStyle1}" Name="ShowLeftMissing" Margin="0 5 15 0"
-                          IsChecked="True" Content="Left Missing" Checked="ShowFilterChanged" Unchecked="ShowFilterChanged" />
+                    <CheckBox Style="{DynamicResource CheckBoxStyle1}" Name="ShowLeftNewer"
+                              Margin="0 5 15 0" IsChecked="True" Content="Left Newer" Checked="ShowFilterChanged"
+                              Unchecked="ShowFilterChanged" />
 
-                <CheckBox Grid.Column="4" Style="{DynamicResource CheckBoxStyle1}" Name="ShowOriginalNewer"
-                          Margin="0 5 15 0" IsChecked="True" Content="Original Newer" Checked="ShowFilterChanged"
-                          Unchecked="ShowFilterChanged" />
+                    <CheckBox Style="{DynamicResource CheckBoxStyle1}" Name="ShowLeftUnique" 
+                              Margin="0 5 15 0" IsChecked="True" Content="Left Unique" Checked="ShowFilterChanged" 
+                              Unchecked="ShowFilterChanged" />
 
-                <CheckBox Grid.Column="5" Style="{DynamicResource CheckBoxStyle1}" Name="ShowRightMissing" Margin="0 5 15 0"
-                          IsChecked="True" Content="Right Missing" Checked="ShowFilterChanged" Unchecked="ShowFilterChanged" />
-
-                <CheckBox Grid.Column="6" Style="{DynamicResource CheckBoxStyle1}" Name="ShowTargetNewer"
-                          Margin="0 5 15 0" IsChecked="True" Content="Target Newer" Checked="ShowFilterChanged"
-                          Unchecked="ShowFilterChanged" />
+                    <CheckBox Style="{DynamicResource CheckBoxStyle1}" Name="ShowRightNewer"
+                              Margin="0 5 15 0" IsChecked="True" Content="Right Newer" Checked="ShowFilterChanged"
+                              Unchecked="ShowFilterChanged" />
+                
+                    <CheckBox Style="{DynamicResource CheckBoxStyle1}" Name="ShowRightUnique" 
+                              Margin="0 5 15 0" IsChecked="True" Content="Right Unique" Checked="ShowFilterChanged" 
+                              Unchecked="ShowFilterChanged" />
+                </StackPanel>
 
                 <Button Style="{DynamicResource Button}" 
-                        Grid.Column="8"
+                        Grid.Column="4"
                         Name="CommitChanges" 
                         Click="CommitChanges_Click"
                         TextBlock.TextAlignment="Center" 
                         FontSize="12"
                         Foreground="Green"
                         Background="Transparent"
-                        Margin="10 0"
+                        Margin="0"
+                        Padding="10 5"
                 >
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <iconPacks:PackIconIonicons Kind="FastforwardiOS" Margin="0 0 5 0"/>

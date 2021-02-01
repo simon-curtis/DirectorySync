@@ -135,8 +135,8 @@ namespace DirectorySync
         private void ComparisonResults_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             var identicalFiles = 0;
-            var targetsMissingLeft = 0;
-            var targetsMissingRight = 0;
+            var rightUnique = 0;
+            var leftUnique = 0;
             var newerOriginals = 0;
             var newerTargets = 0;
 
@@ -147,26 +147,29 @@ namespace DirectorySync
                     case MatchStatus.FilesAreTheSame:
                         identicalFiles++;
                         break;
-                    case MatchStatus.MissingFromLeft:
-                        targetsMissingLeft++;
+                    case MatchStatus.RightUnique:
+                        rightUnique++;
                         break;
-                    case MatchStatus.MissingFromRight:
-                        targetsMissingRight++;
+                    case MatchStatus.LeftUnique:
+                        leftUnique++;
                         break;
-                    case MatchStatus.OriginalIsNewer:
+                    case MatchStatus.LeftIsNewer:
                         newerOriginals++;
                         break;
-                    case MatchStatus.TargetIsNewer:
+                    case MatchStatus.RightIsNewer:
                         newerTargets++;
                         break;
                 }
             }
 
             ShowIdentical.Content = $"Identical ({identicalFiles})";
-            ShowLeftMissing.Content = $"Missing ({targetsMissingLeft})";
-            ShowRightMissing.Content = $"Missing ({targetsMissingRight})";
-            ShowOriginalNewer.Content = $"Original Newer ({newerOriginals})";
-            ShowTargetNewer.Content = $"Target Newer ({newerTargets})";
+            
+            ShowLeftUnique.Content = $"Left Unique ({leftUnique})";
+            ShowLeftNewer.Content = $"Left Newer ({newerOriginals})";
+            
+            ShowRightUnique.Content = $"Right Unique ({rightUnique})";
+            ShowRightNewer.Content = $"Right Newer ({newerTargets})";
+            
             Total.Content = $"{ComparisonResults.Count} file(s)";
         }
 
@@ -203,7 +206,7 @@ namespace DirectorySync
         {
             if (!LeftFolder.Exists || !RightFolder.Exists) return;
 
-            async Task<Dictionary<string, FileInfo>> GetFiles(DirectoryInfo folder)
+            async Task<Dictionary<string, FileInfo>> GetFilesForFolder(DirectoryInfo folder)
             {
                 var results = new Dictionary<string, FileInfo>();
                 var fileNameSplitIndex = folder.FullName.Length + 1;
@@ -211,16 +214,16 @@ namespace DirectorySync
                 await foreach (var file in Finder.SearchDirectoryAsync(fileNameSplitIndex, folder))
                 {
                     var key = file.FullName[fileNameSplitIndex..];
-                    results.Add(key, file);
+                    results.Add(key.ToLower(), file);
                 }
 
                 return results;
             }
 
-            var taskResults = await Task.WhenAll(new[] {
-                GetFiles(LeftFolder),
-                GetFiles(RightFolder)
-            });
+            var taskResults = await Task.WhenAll(
+                GetFilesForFolder(LeftFolder),
+                GetFilesForFolder(RightFolder)
+            );
 
             var files = new Dictionary<string, FileGroup>();
             for (int i = 0; i < taskResults.Length; i++)
@@ -246,18 +249,14 @@ namespace DirectorySync
             await foreach (var comparison in FindDifferences(files))
             {
                 b++;
-
                 Dispatcher.Invoke(() =>
                 {
                     ComparisonResults.Add(comparison);
                     LoadProgress.Value++;
                 });
-
-                if (b == 512)
-                {
-                    DoEvents();
-                    b = 0;
-                }
+                if (b != 512) continue;
+                DoEvents();
+                b = 0;
             }
         }
 
@@ -279,18 +278,18 @@ namespace DirectorySync
         {
             static MatchStatus GetStatus(FileInfo left, FileInfo right)
             {
+                if (left.Length == right.Length)
+                    return MatchStatus.FilesAreTheSame;
+                
                 var timeDifference = left.LastWriteTime - right.LastWriteTime;
 
-                if (timeDifference.Seconds > 0)
-                    return MatchStatus.OriginalIsNewer;
+                if (timeDifference.Seconds > 1)
+                    return MatchStatus.LeftIsNewer;
 
-                if (timeDifference.Seconds < 0)
-                    return MatchStatus.TargetIsNewer;
+                if (timeDifference.Seconds < -1)
+                    return MatchStatus.RightIsNewer;
 
-                if (left.Length != right.Length)
-                    return MatchStatus.FilesAreDifferent;
-
-                return MatchStatus.FilesAreTheSame;
+                return MatchStatus.FilesAreDifferent;
             }
 
             foreach (var (key, (left, right)) in files)
@@ -302,14 +301,14 @@ namespace DirectorySync
                         Name = key,
                         LeftDate = left.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm:ss"),
                         LeftSize = left.Length,
-                        Status = MatchStatus.MissingFromRight
+                        Status = MatchStatus.LeftUnique
                     },
                     (null, _) => new ComparisonResult
                     {
                         Name = key,
                         RightDate = right!.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm:ss"),
                         RightSize = right.Length,
-                        Status = MatchStatus.MissingFromLeft
+                        Status = MatchStatus.RightUnique
                     },
                     _ => new ComparisonResult
                     {
@@ -341,10 +340,10 @@ namespace DirectorySync
             {
                 MatchStatus.NotProcessed => true,
                 MatchStatus.FilesAreTheSame when (ShowIdentical.IsChecked ?? false) => true,
-                MatchStatus.MissingFromLeft when (ShowLeftMissing.IsChecked ?? true) => true,
-                MatchStatus.MissingFromRight when (ShowRightMissing.IsChecked ?? true) => true,
-                MatchStatus.OriginalIsNewer when (ShowOriginalNewer.IsChecked ?? true) => true,
-                MatchStatus.TargetIsNewer when (ShowTargetNewer.IsChecked ?? true) => true,
+                MatchStatus.RightUnique when (ShowRightUnique.IsChecked ?? true) => true,
+                MatchStatus.LeftUnique when (ShowLeftUnique.IsChecked ?? true) => true,
+                MatchStatus.LeftIsNewer when (ShowLeftNewer.IsChecked ?? true) => true,
+                MatchStatus.RightIsNewer when (ShowRightNewer.IsChecked ?? true) => true,
                 _ => false
             };
         }
@@ -361,6 +360,8 @@ namespace DirectorySync
                         try
                         {
                             CopyFile(comparison, RightFolder, LeftFolder);
+                            comparison.LeftDate = comparison.RightDate;
+                            comparison.LeftSize = comparison.RightSize;
                             comparison.Status = MatchStatus.FilesAreTheSame;
                             comparison.Resolution = ResolutionAction.Nothing;
                         }
@@ -368,12 +369,15 @@ namespace DirectorySync
                         {
                             MessageBox.Show("There was an error copying the file\r\n" + ex.Message);
                         }
+                        
                         break;
 
                     case ResolutionAction.CopyRight:
                         try
                         {
                             CopyFile(comparison, LeftFolder, RightFolder);
+                            comparison.RightDate = comparison.LeftDate;
+                            comparison.RightSize = comparison.LeftSize;
                             comparison.Status = MatchStatus.FilesAreTheSame;
                             comparison.Resolution = ResolutionAction.Nothing;
                         }
@@ -401,6 +405,8 @@ namespace DirectorySync
                         break;
                 }
             }
+
+            Results.ItemsSource = ComparisonResults;
         }
 
         private static void CopyFile(ComparisonResult file, DirectoryInfo from, DirectoryInfo to)
@@ -582,10 +588,10 @@ namespace DirectorySync
                 ComparisonResults[i].RightSize = currentLeftSize;
                 ComparisonResults[i].Status = ComparisonResults[i].Status switch
                 {
-                    MatchStatus.MissingFromLeft => MatchStatus.MissingFromRight,
-                    MatchStatus.MissingFromRight => MatchStatus.MissingFromLeft,
-                    MatchStatus.OriginalIsNewer => MatchStatus.TargetIsNewer,
-                    MatchStatus.TargetIsNewer => MatchStatus.OriginalIsNewer,
+                    MatchStatus.RightUnique => MatchStatus.LeftUnique,
+                    MatchStatus.LeftUnique => MatchStatus.RightUnique,
+                    MatchStatus.LeftIsNewer => MatchStatus.RightIsNewer,
+                    MatchStatus.RightIsNewer => MatchStatus.LeftIsNewer,
                     _ => ComparisonResults[i].Status
                 };
                 ComparisonResults[i].Resolution = ComparisonResults[i].Resolution switch

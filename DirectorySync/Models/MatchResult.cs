@@ -7,11 +7,11 @@ namespace DirectorySync.Models
     public enum MatchStatus
     {
         NotProcessed,
-        MissingFromLeft,
-        MissingFromRight,
-        OriginalIsNewer,
+        RightUnique,
+        LeftUnique,
+        LeftIsNewer,
         FilesAreDifferent,
         FilesAreTheSame,
-        TargetIsNewer
+        RightIsNewer
     }
 }
