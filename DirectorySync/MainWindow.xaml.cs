@@ -360,7 +360,7 @@ namespace DirectorySync
                     case ResolutionAction.CopyLeft:
                         try
                         {
-                            CopyFile(comparison, LeftFolder, RightFolder);
+                            CopyFile(comparison, RightFolder, LeftFolder);
                             comparison.Status = MatchStatus.FilesAreTheSame;
                             comparison.Resolution = ResolutionAction.Nothing;
                         }
@@ -373,7 +373,7 @@ namespace DirectorySync
                     case ResolutionAction.CopyRight:
                         try
                         {
-                            CopyFile(comparison, RightFolder, LeftFolder);
+                            CopyFile(comparison, LeftFolder, RightFolder);
                             comparison.Status = MatchStatus.FilesAreTheSame;
                             comparison.Resolution = ResolutionAction.Nothing;
                         }
