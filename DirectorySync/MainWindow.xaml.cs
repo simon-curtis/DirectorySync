@@ -14,6 +14,7 @@ using FileCompare;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Collections.Generic;
+using System.Threading.Channels;
 
 namespace DirectorySync
 {
@@ -77,10 +78,7 @@ namespace DirectorySync
             else FirstTimeSetup();
         }
 
-        protected override void OnClosing(CancelEventArgs e)
-        {
-            SaveSettings();
-        }
+        protected override void OnClosing(CancelEventArgs e) => SaveSettings();
 
         private void LoadSettings()
         {
@@ -95,17 +93,11 @@ namespace DirectorySync
 
         private void FirstTimeSetup()
         {
-            if (!Directory.Exists(IgnoresFolder))
-            {
-                Directory.CreateDirectory(IgnoresFolder);
-            }
+            Directory.CreateDirectory(IgnoresFolder);
 
-            var defaultIgnoresPath = IgnoresFolder + "default.ignores";
-            if (!File.Exists(defaultIgnoresPath))
-            {
-                File.WriteAllText(defaultIgnoresPath, "");
-                IgnoreFilePath = defaultIgnoresPath;
-            }
+            IgnoreFilePath = IgnoresFolder + "default.ignores";
+            if (!File.Exists(IgnoreFilePath))
+                File.WriteAllText(IgnoreFilePath, "");
 
             Folder1Path_MouseDown(null, null);
             if (LeftFolder.FullName == "")
@@ -132,36 +124,71 @@ namespace DirectorySync
             File.WriteAllText(LastRunPath, settingsAsJson);
         }
 
+        private int identicalFiles;
+        private int rightUnique;
+        private int leftUnique;
+        private int newerOriginals;
+        private int newerTargets;
+        
         private void ComparisonResults_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            var identicalFiles = 0;
-            var rightUnique = 0;
-            var leftUnique = 0;
-            var newerOriginals = 0;
-            var newerTargets = 0;
-
-            for (int i = 0; i < ComparisonResults.Count; i++)
+            if (ComparisonResults.Count == 0)
             {
-                switch (ComparisonResults[i].Status)
+                identicalFiles = 0;
+                rightUnique = 0;
+                leftUnique = 0;
+                newerOriginals = 0;
+                newerTargets = 0;
+            }
+            else if (e.OldItems != null)
+            {
+                foreach (ComparisonResult item in e.OldItems)
                 {
-                    case MatchStatus.FilesAreTheSame:
-                        identicalFiles++;
-                        break;
-                    case MatchStatus.RightUnique:
-                        rightUnique++;
-                        break;
-                    case MatchStatus.LeftUnique:
-                        leftUnique++;
-                        break;
-                    case MatchStatus.LeftIsNewer:
-                        newerOriginals++;
-                        break;
-                    case MatchStatus.RightIsNewer:
-                        newerTargets++;
-                        break;
+                    switch (item.Status)
+                    {
+                        case MatchStatus.FilesAreTheSame:
+                            identicalFiles--;
+                            break;
+                        case MatchStatus.RightUnique:
+                            rightUnique--;
+                            break;
+                        case MatchStatus.LeftUnique:
+                            leftUnique--;
+                            break;
+                        case MatchStatus.LeftIsNewer:
+                            newerOriginals--;
+                            break;
+                        case MatchStatus.RightIsNewer:
+                            newerTargets--;
+                            break;
+                    }
                 }
             }
-
+            else if (e.NewItems != null)
+            {
+                foreach(ComparisonResult result in e.NewItems)
+                {
+                    switch (result.Status)
+                    {
+                        case MatchStatus.FilesAreTheSame:
+                            identicalFiles++;
+                            break;
+                        case MatchStatus.RightUnique:
+                            rightUnique++;
+                            break;
+                        case MatchStatus.LeftUnique:
+                            leftUnique++;
+                            break;
+                        case MatchStatus.LeftIsNewer:
+                            newerOriginals++;
+                            break;
+                        case MatchStatus.RightIsNewer:
+                            newerTargets++;
+                            break;
+                    }       
+                }
+            }
+            
             ShowIdentical.Content = $"Identical ({identicalFiles})";
             
             ShowLeftUnique.Content = $"Left Unique ({leftUnique})";
@@ -184,7 +211,7 @@ namespace DirectorySync
 
             try
             {
-                await GetFiles();
+                await StartSearch();
             }
             catch (System.Text.RegularExpressions.RegexParseException ex)
             {
@@ -202,65 +229,62 @@ namespace DirectorySync
             LoadProgress.Value = 0;
         }
 
-        private async Task GetFiles()
+        private async Task StartSearch()
         {
             if (!LeftFolder.Exists || !RightFolder.Exists) return;
 
-            async Task<Dictionary<string, FileInfo>> GetFilesForFolder(DirectoryInfo folder)
-            {
-                var results = new Dictionary<string, FileInfo>();
-                var fileNameSplitIndex = folder.FullName.Length + 1;
+            LoadProgress.Value = 0;
 
-                await foreach (var file in Finder.SearchDirectoryAsync(fileNameSplitIndex, folder))
+            var channel = Channel.CreateUnbounded<ComparisonResult>();
+            
+            _ = Task.Run(async delegate
+            {
+                var fileGroups = new Dictionary<string, FileGroup>();
+                
+                var leftFolderSplitIndex = LeftFolder.FullName.Length + 1;
+                await foreach (var file in Finder.SearchDirectoryAsync(leftFolderSplitIndex, LeftFolder))
                 {
-                    var key = file.FullName[fileNameSplitIndex..];
-                    results.Add(key.ToLower(), file);
+                    var key = file.FullName[leftFolderSplitIndex..].ToLower();
+                    fileGroups.Add(key, new FileGroup { left = file });
                 }
-
-                return results;
-            }
-
-            var taskResults = await Task.WhenAll(
-                GetFilesForFolder(LeftFolder),
-                GetFilesForFolder(RightFolder)
-            );
-
-            var files = new Dictionary<string, FileGroup>();
-            for (int i = 0; i < taskResults.Length; i++)
-            {
-                foreach (var (key, file) in taskResults[i])
+                
+                var rightFolderSplitIndex = RightFolder.FullName.Length + 1;
+                await foreach (var file in Finder.SearchDirectoryAsync(rightFolderSplitIndex, RightFolder))
                 {
-                    if (files.ContainsKey(key))
+                    var key = file.FullName[rightFolderSplitIndex..].ToLower();
+                    if (fileGroups.ContainsKey(key))
                     {
-                        files[key] = i == 0
-                            ? new FileGroup(file, files[key].right)
-                            : new FileGroup(files[key].left, file);
+                        fileGroups[key].right = file;
                     }
                     else
                     {
-                        files.Add(key, i == 0
-                            ? new FileGroup(file, null)
-                            : new FileGroup(null, file));
+                        fileGroups.Add(key, new FileGroup {right = file});
                     }
                 }
-            }
 
-            int b = 0;
-            await foreach (var comparison in FindDifferences(files))
-            {
-                b++;
-                Dispatcher.Invoke(() =>
+                foreach (var comparison in FindDifferences(fileGroups))
                 {
-                    ComparisonResults.Add(comparison);
-                    LoadProgress.Value++;
-                });
-                if (b != 512) continue;
+                    Dispatcher.Invoke(delegate
+                    {
+                        LoadProgress.Maximum++;
+                    });
+                    await channel.Writer.WriteAsync(comparison);
+                }
+
+                channel.Writer.Complete();
+            });
+
+            await foreach (var comparison in channel.Reader.ReadAllAsync())
+            {
+                ComparisonResults.Add(comparison);
+                LoadProgress.Value++;
                 DoEvents();
-                b = 0;
             }
+            
+            Results.IsReadOnly = true;
         }
 
-        public void DoEvents()
+        private static void DoEvents()
         {
             static object? ExitFrame(object f)
             {
@@ -268,33 +292,36 @@ namespace DirectorySync
                 return null;
             }
 
-            DispatcherFrame frame = new DispatcherFrame();
+            DispatcherFrame frame = new();
             Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background,
                 new DispatcherOperationCallback(ExitFrame), frame);
             Dispatcher.PushFrame(frame);
         }
 
-        private static async IAsyncEnumerable<ComparisonResult> FindDifferences(IReadOnlyDictionary<string, FileGroup> files)
+        private static MatchStatus GetStatus(FileInfo left, FileInfo right)
         {
-            static MatchStatus GetStatus(FileInfo left, FileInfo right)
-            {
-                if (left.Length == right.Length)
-                    return MatchStatus.FilesAreTheSame;
+            if (left.Length == right.Length)
+                return MatchStatus.FilesAreTheSame;
                 
-                var timeDifference = left.LastWriteTime - right.LastWriteTime;
+            var timeDifference = left.LastWriteTime - right.LastWriteTime;
 
-                if (timeDifference.Seconds > 1)
-                    return MatchStatus.LeftIsNewer;
+            if (timeDifference.Seconds > 1)
+                return MatchStatus.LeftIsNewer;
 
-                if (timeDifference.Seconds < -1)
-                    return MatchStatus.RightIsNewer;
+            if (timeDifference.Seconds < -1)
+                return MatchStatus.RightIsNewer;
 
-                return MatchStatus.FilesAreDifferent;
-            }
+            return MatchStatus.FilesAreDifferent;
+        }
 
+        private static IEnumerable<ComparisonResult> FindDifferences(
+            IReadOnlyDictionary<string, FileGroup> files)
+        {
+            var results = new List<ComparisonResult>();
+            
             foreach (var (key, (left, right)) in files)
             {
-                yield return (left, right) switch
+                results.Add((left, right) switch
                 {
                     (_, null) => new ComparisonResult
                     {
@@ -319,8 +346,10 @@ namespace DirectorySync
                         RightSize = right.Length,
                         Status = GetStatus(left, right)
                     },
-                };
+                });
             }
+
+            return results;
         }
 
         private void ShowFilterChanged(object sender, RoutedEventArgs e)
@@ -519,14 +548,12 @@ namespace DirectorySync
         {
             var result = LegacyFolderPicker.GetFolder("Select original folder");
             if (result != "") LeftFolder = new DirectoryInfo(result);
-            SaveSettings();
         }
 
         private void Folder2Path_MouseDown(object sender, MouseButtonEventArgs e)
         {
             var result = LegacyFolderPicker.GetFolder("Select comparison folder");
             if (result != "") RightFolder = new DirectoryInfo(result);
-            SaveSettings();
         }
 
         private void HandleSearchBox_KeyUp(object sender, KeyEventArgs e) => ShowFilterChanged(null, null);
@@ -576,51 +603,45 @@ namespace DirectorySync
             LeftFolder = new DirectoryInfo(rightCurrent);
             RightFolder = new DirectoryInfo(leftCurrent);
 
-            for (int i = 0; i < ComparisonResults.Count; i++)
+            foreach (ComparisonResult t in ComparisonResults)
             {
-                var currentLeftDate = ComparisonResults[i].LeftDate;
-                var currentLeftSize = ComparisonResults[i].LeftSize;
+                var currentLeftDate = t.LeftDate;
+                var currentLeftSize = t.LeftSize;
 
-                ComparisonResults[i].Name = ComparisonResults[i].Name;
-                ComparisonResults[i].LeftDate = ComparisonResults[i].RightDate;
-                ComparisonResults[i].LeftSize = ComparisonResults[i].RightSize;
-                ComparisonResults[i].RightDate = currentLeftDate;
-                ComparisonResults[i].RightSize = currentLeftSize;
-                ComparisonResults[i].Status = ComparisonResults[i].Status switch
+                t.Name = t.Name;
+                t.LeftDate = t.RightDate;
+                t.LeftSize = t.RightSize;
+                t.RightDate = currentLeftDate;
+                t.RightSize = currentLeftSize;
+                t.Status = t.Status switch
                 {
                     MatchStatus.RightUnique => MatchStatus.LeftUnique,
                     MatchStatus.LeftUnique => MatchStatus.RightUnique,
                     MatchStatus.LeftIsNewer => MatchStatus.RightIsNewer,
                     MatchStatus.RightIsNewer => MatchStatus.LeftIsNewer,
-                    _ => ComparisonResults[i].Status
+                    _ => t.Status
                 };
-                ComparisonResults[i].Resolution = ComparisonResults[i].Resolution switch
+                t.Resolution = t.Resolution switch
                 {
                     ResolutionAction.CopyLeft => ResolutionAction.CopyRight,
                     ResolutionAction.CopyRight => ResolutionAction.CopyLeft,
-                    _ => ComparisonResults[i].Resolution
+                    _ => t.Resolution
                 };
             }
             Results.ItemsSource = null;
             Results.ItemsSource = ComparisonResults;
-            ComparisonResults_CollectionChanged(null, null);
+            
             SaveSettings();
         }
 
         #endregion
     }
 
-    internal struct FileGroup
+    internal class FileGroup
     {
-        public FileInfo? left { get; }
-        public FileInfo? right { get; }
-
-        public FileGroup(FileInfo? left, FileInfo? right)
-        {
-            this.left = left;
-            this.right = right;
-        }
-
+        public FileInfo? left { get; set;  }
+        public FileInfo? right { get; set;  }
+        
         public override bool Equals(object obj)
         {
             return obj is FileGroup other &&
@@ -628,10 +649,7 @@ namespace DirectorySync
                    EqualityComparer<FileInfo>.Default.Equals(right, other.right);
         }
 
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(left, right);
-        }
+        public override int GetHashCode() => HashCode.Combine(left, right);
 
         public void Deconstruct(out FileInfo left, out FileInfo right)
         {
@@ -642,11 +660,6 @@ namespace DirectorySync
         public static implicit operator (FileInfo left, FileInfo right)(FileGroup value)
         {
             return (value.left, value.right);
-        }
-
-        public static implicit operator FileGroup((FileInfo left, FileInfo right) value)
-        {
-            return new FileGroup(value.left, value.right);
         }
     }
 }
