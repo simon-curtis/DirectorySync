@@ -2,17 +2,21 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
 
 namespace FileCompare
 {
     public class FileFinder
     {
         private readonly string _filterPath;
-        private Regex _directoryFilters;
+        public Regex DirectoryFilters { get; private set; }
         private ICollection<string> DirectoryPaths { get; set; } = new List<string>();
-        private Regex _fileFilters;
+        public Regex FileFilters { get; private set; }
         private ICollection<string> FilePaths { get; set; } = new List<string>();
 
         public FileFinder(string filterPath)
@@ -48,23 +52,47 @@ namespace FileCompare
             static Regex CreateRegexString(ICollection<string> paths, Func<string, string> regexTemplate) =>
                 new Regex(string.Join('|', paths.Select(regexTemplate)), RegexOptions.IgnoreCase);
 
-            _directoryFilters = CreateRegexString(DirectoryPaths, path => $@"({path})");
-            _fileFilters = CreateRegexString(FilePaths, path => $@"({path}$)");
+            DirectoryFilters = CreateRegexString(DirectoryPaths, path => $@"({path})");
+            FileFilters = CreateRegexString(FilePaths, path => $@"({path}$)");
         }
 
-        public async IAsyncEnumerable<FileInfo> SearchDirectoryAsync(int relativePathIndex, DirectoryInfo directoryInfo)
+        public async IAsyncEnumerable<FileInfo> SearchDirectoryAsync(int relativePathIndex, DirectoryInfo directoryInfo, 
+            [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             foreach (var file in directoryInfo.GetFiles())
             {
-                if (_fileFilters.IsMatch(file.FullName[relativePathIndex..])) continue;
+                if (cancellationToken.IsCancellationRequested) break;
+                
+                if (FileFilters.IsMatch(file.FullName[relativePathIndex..])) continue;
                 yield return file;
             }
 
-            foreach (var dir in directoryInfo.GetDirectories())
+            var subFileChannel = Channel.CreateUnbounded<FileInfo>();
+
+            _ = Task.Run(async delegate
             {
-                if (_directoryFilters.IsMatch(dir.FullName[relativePathIndex..])) continue;
-                await foreach (var file in SearchDirectoryAsync(relativePathIndex, dir))
-                    yield return file;
+                var tasks = new List<Task>();
+
+                var directoriesToSearch = directoryInfo.GetDirectories()
+                    .Where(dir => !DirectoryFilters.IsMatch(dir.FullName[relativePathIndex..]));
+                
+                foreach (var dir in directoriesToSearch.TakeWhile(_ => !cancellationToken.IsCancellationRequested))
+                {
+                    tasks.Add(Task.Run(async delegate
+                    {
+                        await foreach (var file in SearchDirectoryAsync(relativePathIndex, dir, cancellationToken))
+                            await subFileChannel.Writer.WriteAsync(file, cancellationToken);
+                    }, cancellationToken));
+                }
+
+                await Task.WhenAll(tasks);
+
+                subFileChannel.Writer.Complete();
+            }, cancellationToken);
+
+            await foreach (var file in subFileChannel.Reader.ReadAllAsync(cancellationToken))
+            {
+                yield return file;
             }
         }
 
@@ -112,11 +140,11 @@ namespace FileCompare
 
             var directoryExlusions = string.IsNullOrEmpty(subDirectoryPath)  
                 ? Array.Empty<string>()
-                : _directoryFilters
+                : DirectoryFilters
                     .Matches(subDirectoryPath)
                     .Select(match => $"Directory: {match.Value}");
 
-            var fileExclusions = _fileFilters.Matches(fileInfo.Name).Select(match => $"File: {match.Value}");
+            var fileExclusions = FileFilters.Matches(fileInfo.Name).Select(match => $"File: {match.Value}");
 
             return (directoryExlusions, fileExclusions);
         }
