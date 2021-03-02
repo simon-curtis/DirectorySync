@@ -295,7 +295,7 @@ namespace DirectorySync
                         await foreach (var file in Finder.SearchDirectoryAsync(
                             relativeIndex, g.Folder, cancellationToken))
                         {
-                            var key = file.FullName[relativeIndex..].ToLower();
+                            var key = file.FullName[relativeIndex..];
                             await fileGroupChannel.Writer.WriteAsync((key, file, g.Side), cancellationToken);
                         }
                     }, cancellationToken));
@@ -308,7 +308,7 @@ namespace DirectorySync
             
             _ = Task.Run(async delegate
             {
-                var fileGroups = new Dictionary<string, FileGroup>();
+                var fileGroups = new Dictionary<string, FileGroup>(new StringComparerIgnoreCase());
 
                 await foreach (var (key, file, side) in fileGroupChannel.Reader.ReadAllAsync(cancellationToken))
                 {
@@ -394,7 +394,7 @@ namespace DirectorySync
                     RightSize = r.Length,
                     Status = MatchStatus.RightUnique
                 },
-                _ => new ComparisonResult
+                ({ } l, { } r) => new ComparisonResult
                 {
                     Name = key,
                     LeftDate = left!.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm:ss"),
@@ -403,6 +403,10 @@ namespace DirectorySync
                     RightSize = right.Length,
                     Status = GetStatus(left, right)
                 },
+                _ => new ComparisonResult
+                {
+                    Name = "Missing"
+                }
             };
         }
 
@@ -694,6 +698,14 @@ namespace DirectorySync
         }
 
         #endregion
+    }
+
+    public class StringComparerIgnoreCase : IEqualityComparer<string>
+    {
+        public bool Equals(string? x, string? y) => 
+            string.Equals(x, y, StringComparison.InvariantCultureIgnoreCase);
+
+        public int GetHashCode(string obj) => obj.ToLowerInvariant().GetHashCode();
     }
 
     internal class FileGroup
