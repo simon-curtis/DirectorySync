@@ -367,11 +367,11 @@ namespace DirectorySync
 
         private static MatchStatus GetStatus(FileSystemInfo left, FileSystemInfo right)
         {
-            return (left.LastWriteTime - right.LastWriteTime).Seconds switch
+            return (left.LastWriteTime - right.LastWriteTime).TotalSeconds switch
             {
-                > 1 => MatchStatus.LeftIsNewer,
                 < -1 => MatchStatus.RightIsNewer,
-                _ => MatchStatus.FilesAreTheSame 
+                > 1 => MatchStatus.LeftIsNewer,
+                _ => MatchStatus.FilesAreTheSame,
             };
         }
 
@@ -401,7 +401,7 @@ namespace DirectorySync
                     LeftSize = left.Length,
                     RightDate = right!.LastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm:ss"),
                     RightSize = right.Length,
-                    Status = GetStatus(left, right)
+                    Status = GetStatus(l, r)
                 },
                 _ => new ComparisonResult
                 {
