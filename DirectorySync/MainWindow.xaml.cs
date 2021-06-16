@@ -441,6 +441,8 @@ namespace DirectorySync
 
         private void CommitChanges_Click(object sender, RoutedEventArgs e)
         {
+            var comparisonsToRemove = new List<ComparisonResult>();
+
             foreach (var comparison in ComparisonResults)
             {
                 switch (comparison.Resolution)
@@ -486,7 +488,7 @@ namespace DirectorySync
                             var rightPath = RightFolder.FullName + "/" + comparison.Name;
                             if (File.Exists(rightPath)) File.Delete(rightPath);
 
-                            ComparisonResults.Remove(comparison);
+                            comparisonsToRemove.Add(comparison);
                         }
                         catch (Exception ex)
                         {
@@ -496,6 +498,9 @@ namespace DirectorySync
                         break;
                 }
             }
+
+            foreach (var result in comparisonsToRemove)
+                ComparisonResults.Remove(result);
 
             Results.ItemsSource = ComparisonResults;
         }
